@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('email')->nullable()->unique();
             $table->string('phone_number')->unique();
             // $table->enum('gander' ,['famale', 'male']);
-            $table->enum('account_type' ,['tenat', 'apartment_owner']);
-            $table->enum('owner_status' ,['refused', 'accepted', 'under_review'])->default('under_review');
+            $table->enum('account_type', ['tenant', 'apartment_owner', 'admin']);
+            $table->enum('owner_status', ['refused', 'accepted', 'under_review'])->default('under_review');
             $table->timestamp('email_verified_at')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->string('password');
