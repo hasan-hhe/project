@@ -13,31 +13,31 @@ class SignupController extends Controller
 {
     public function register(Request $request)
     {
-        try{
-        $request->validate([
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'phone_number' => 'required|string|unique:users|regex:/^[0-9]+$/',
-            'date_of_birth' => 'nullable|date',
-            'account_type' => 'required|in:tenat, apartment_owner',
-            'email' => 'nullable|string|email|unique:users',
-            'password' => 'required|min:6'
-        ]);
-        }catch(Exception $e){
+        try {
+            $request->validate([
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'phone_number' => 'required|string|unique:users|regex:/^[0-9]+$/',
+                'date_of_birth' => 'nullable|date',
+                'account_type' => 'nullable|in:tenant,apartment_owner',
+                'email' => 'nullable|string|email|unique:users',
+                'password' => 'required|min:6'
+            ]);
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
         }
-            
+
         $user = User::create([
-           'first_name' => $request->first_name,
-           'last_name' => $request->last_name,
-           'phone_number' => $request->phone_number,
-           'date_of_birth' => $request->date_of_birth,
-           'account_type' => $request->account_type,
-           'email' => $request->email,
-           'password' => Hash::make($request->password)
-       ]);
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'phone_number' => $request->phone_number,
+            'date_of_birth' => $request->date_of_birth,
+            'account_type' => $request->account_type,
+            'email' => $request->email,
+            'password' => Hash::make($request->password)
+        ]);
 
         $token = $user->createToken('api_token')->plainTextToken;
 
@@ -51,38 +51,43 @@ class SignupController extends Controller
 
     public function login(Request $request)
     {
-        try{
-    $request->validate([
-        'phone_number' => 'required|string|regex:/^[0-9]+$/',
-        'password' => 'required'
-    ]);
-    }catch(Exception $e){
-        return response()->json([
+        try {
+            $request->validate([
+                'phone_number' => 'required|string|regex:/^[0-9]+$/',
+                'password' => 'required'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
                 'message' => $e->getMessage()
             ]);
-    }
+        }
 
-    try{
-    $user = User::where('phone_number', $request->phone_number)->firstorFail();
-    }catch(Exception $e){return response()->json(['message'=>'phone number not found']);}
+        try {
+            $user = User::where('phone_number', $request->phone_number)->firstorFail();
+        } catch (Exception $e) {
+            return response()->json(['message' => 'phone number not found']);
+        }
 
 
-    if (!Hash::check($request->password, $user->password)) {
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(
+                [
+                    'error' => 'password not correct'
+                ],
+                401
+            );
+        }
+
+        $token = $user->createToken('api_token')->plainTextToken;
+
         return response()->json([
-            'error' => 'password not correct'],
-             401);
-    }
-
-    $token = $user->createToken('api_token')->plainTextToken;
-
-    return response()->json([
             'message' => 'login done!',
             'user'    => new UserRecource($user),
             'token'   => $token,
-    ]);
+        ]);
     }
 
-    
+
     // public function logout(Request $request)
     // {
 

@@ -6,11 +6,12 @@ use App\Http\Middleware\checktoken;
 use Illuminate\Support\Facades\Route;
 
 
-// Route::post('/register', [SignupController::class, "register"]); 
-Route::name("userinfo")->group(function () {
+Route::prefix("auth")->group(function () {
     Route::post('/register', [SignupController::class, "register"]);
-    Route::post('/login', [SignupController::class, "login"]); 
+    Route::post('/login', [SignupController::class, "login"]);
 });
-// Route::post('/login', [SignupController::class, "login"]); 
-Route::post('/logout', [SignupController::class, 'logout'])->middleware('auth:sanctum');
-Route::post('/myprofile', [ProfileController::class, 'getuserinformation']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/my-profile', [ProfileController::class, 'getUserInformation']);
+    Route::post('/logout', [SignupController::class, 'logout']);
+});
