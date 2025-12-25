@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller3;
 use App\Http\Controllers\SignupController;
 use App\Http\Middleware\checktoken;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ApartmentController;
 
 Route::get('/', function () {
     return view('welcome');
 });
-
+Route::get('/apartments',ApartmentController::class . '@index')->name('getApar');
+Route::get('/apartments/{id}', ApartmentController::class . '@show')->name('getAparById');
 // Route::get('/checkuser', [Controller1::class, "checkuser"]);
 // Route::get('/getalluser', [Controller1::class, "getalluser"]);
 // Route::get('/getallproduct', [Controller1::class, "getallproduct"]);
