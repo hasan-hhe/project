@@ -12,7 +12,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/apartments',ApartmentController::class . '@index')->name('getApar');
+Route::get('/apartments', ApartmentController::class . '@index')->name('getApar');
 Route::get('/apartments/{id}', ApartmentController::class . '@show')->name('getAparById');
 // Route::get('/checkuser', [Controller1::class, "checkuser"]);
 // Route::get('/getalluser', [Controller1::class, "getalluser"]);
@@ -39,5 +39,3 @@ Route::get('/apartments/{id}', ApartmentController::class . '@show')->name('getA
 //         "discription":"katchap",
 //         "price":500
 //     }
-
-
