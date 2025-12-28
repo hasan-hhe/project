@@ -11,6 +11,7 @@ use App\Http\Controllers\ApartmentController;
 Route::get('/', function () {
     return view('welcome');
 });
+
 Route::get('/apartments',ApartmentController::class . '@index')->name('getApar');
 Route::get('/apartments/{id}', ApartmentController::class . '@show')->name('getAparById');
 // Route::get('/checkuser', [Controller1::class, "checkuser"]);
