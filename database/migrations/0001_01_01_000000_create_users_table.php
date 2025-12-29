@@ -20,9 +20,10 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('email')->nullable()->unique();
             $table->string('phone_number')->unique();
-            // $table->enum('gander' ,['famale', 'male']);
-            $table->enum('account_type', ['tenant', 'apartment_owner', 'admin']);
-            $table->enum('owner_status', ['refused', 'accepted', 'under_review'])->default('under_review');
+            $table->string('avatar_url')->nullable();
+            $table->string('identity_docomunt_url');
+            $table->enum('account_type', ['RENTER', 'OWNER', 'ADMIN']);
+            $table->enum('owner_status', ['REJECTED', 'APPROVED', 'PENDING'])->default('PENDING');
             $table->timestamp('email_verified_at')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->string('password');

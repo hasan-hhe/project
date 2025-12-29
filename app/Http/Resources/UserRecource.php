@@ -14,14 +14,10 @@ class UserRecource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        if($request->route()->named("userinfo"))
-        {
-            return [
-                'id'=> $this->id,
-                'name'=> $this->first_name.$this->last_name,
-                // 'email'=> $this->email
-            ];
-        }
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'name' => $this->first_name . $this->last_name,
+            // 'email'=> $this->email
+        ];
     }
 }

@@ -13,18 +13,18 @@ return new class extends Migration
     {
         Schema::create('apartments', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('owner_id');
+            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('governorate_id')->constrained()->onDelete('cascade');
+            $table->foreignId('city_id')->constrained('cities')->onDelete('cascade');
             $table->string('title');
             $table->text('description');
             $table->decimal('price');
             $table->integer('rooms_count');
-            $table->bigInteger('city_id');
-            $table->bigInteger('governorate_id');
             $table->string('address_line');
-            $table->decimal('rating');
-            $table->boolean('is_active');
-            $table->dateTime('created_at');
-            $table->dateTime('updated_at');
+            $table->decimal('rating_avg')->default(5);
+            $table->boolean('is_active')->default(false);
+            $table->boolean('is_favorite')->default(false);
+            $table->timestamps();
         });
     }
 

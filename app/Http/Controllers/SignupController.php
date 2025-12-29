@@ -16,6 +16,8 @@ class SignupController extends Controller
         try {
             $request->validate([
                 'first_name' => 'required|string',
+                'avatar_image' => 'nullable|image|mimes:png,jpg,gif',
+                'identity_document_image' => 'required|image|mimes:png,jpg,gif',
                 'last_name' => 'required|string',
                 'phone_number' => 'required|string|unique:users|regex:/^[0-9]+$/',
                 'date_of_birth' => 'nullable|date',
@@ -29,15 +31,27 @@ class SignupController extends Controller
             ]);
         }
 
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'phone_number' => $request->phone_number,
-            'date_of_birth' => $request->date_of_birth,
-            'account_type' => $request->account_type,
-            'email' => $request->email,
-            'password' => Hash::make($request->password)
-        ]);
+        $avatar = null;
+        if ($request->hasFile('avatar_image'))
+            $avatar = $request->file('avatar_image')->store('images', 'public');
+
+        $identity_document = $request->file('identity_document_image')->store('images', 'public');
+
+        try {
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone_number' => $request->phone_number,
+                'date_of_birth' => $request->date_of_birth,
+                'account_type' => $request->account_type,
+                'email' => $request->email,
+                'avatar_url' => $avatar,
+                'identity_docomunt_url' => $identity_document,
+                'password' => Hash::make($request->password)
+            ]);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
 
         $token = $user->createToken('api_token')->plainTextToken;
 
@@ -88,52 +102,13 @@ class SignupController extends Controller
     }
 
 
-    // public function logout(Request $request)
-    // {
-
-    //     $auth = $request->header('Authorization');
-
-    //     if (!$auth) {
-    //         return response()->json([
-    //             'message' => 'Token missing',
-    //         ], 400);
-    //     }
-
-    //     if (!Str::startsWith($auth, 'Bearer')) {
-    //         return response()->json([
-    //             'message' => 'Authorization header must be Bearer token',
-    //         ], 400);
-    //     }
-
-    //     $plainToken = trim(Str::replaceFirst('Bearer', '', $auth));
-
-    //     if ($plainToken === '') {
-    //         return response()->json([
-    //             'message' => 'Bearer token is empty',
-    //         ], 400);
-    //     }
-
-    //     $user = $request->user();
-
-    //     if (!$user) {
-    //         return response()->json([
-    //             'message' => 'Invalid token',
-    //         ], 401);
-    //     }
-
-    //     $currentToken = $user->currentAccessToken();
-
-    //     if (!$currentToken) {
-    //         return response()->json([
-    //             'message' => 'No active access token found for this session',
-    //         ], 401);
-    //     }
-
-    //     $currentToken->delete();
-    //     return response()->json([
-    //         'message' => 'logout done!'
-    //     ], 200);
-    // }
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+        return response()->json([
+            'message' => 'logout done!'
+        ], 200);
+    }
 }
 
 //

@@ -17,10 +17,11 @@ class User extends Authenticatable
         'first_name',
         'last_name',
         'phone_number',
-        'gander',
         'date_of_birth',
         'accuont_type',
         'email',
+        'avatar_url',
+        'identity_document_url',
         'password',
     ];
 
@@ -36,5 +37,35 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function appartments()
+    {
+        return $this->hasMany(Apartment::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function ownerConservations()
+    {
+        return $this->hasMany(Conservation::class, 'owner_id');
+    }
+
+    public function renterConservations()
+    {
+        return $this->hasMany(Conservation::class, 'renter_id');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }

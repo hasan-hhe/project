@@ -21,4 +21,10 @@ class profileController extends Controller
             'email' => $user->email
         ]);
     }
+
+    public function getAvatar() {}
+
+    public function getIdentityDoucument() {}
+
+    public function updateUserInformation() {}
 }
