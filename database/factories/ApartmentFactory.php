@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
+use App\Models\City;
+use App\Models\Governorate;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,19 +19,19 @@ class ApartmentFactory extends Factory
      */
     public function definition(): array
     {
-        return [
-            'owner_id' => $this->faker->numberBetween(1, 10),
-            'title' => $this->faker->sentence(),
+        return[
+            'owner_id' => User::factory(),
+            'governorate_id' => Governorate::factory(),
+            'city_id' => City::factory(),
+            'title' => $this->faker->sentence(3),
             'description' => $this->faker->paragraph(),
             'price' => $this->faker->randomFloat(2, 50, 500),
             'rooms_count' => $this->faker->numberBetween(1, 5),
-            'city_id' => $this->faker->numberBetween(1, 20),
-            'governorate_id' => $this->faker->numberBetween(1, 10),
             'address_line' => $this->faker->address(),
-            'rating' => $this->faker->randomFloat(1, 1, 5),
+            'rating_avg' => $this->faker->randomFloat(2, 1, 5),
             'is_active' => $this->faker->boolean(),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'is_favorite' => $this->faker->boolean(),
+            'photosURL' => json_encode([$this->faker->imageUrl(), $this->faker->imageUrl()])
         ];
     }
 }

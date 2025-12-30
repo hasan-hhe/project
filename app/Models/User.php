@@ -18,10 +18,10 @@ class User extends Authenticatable
         'last_name',
         'phone_number',
         'date_of_birth',
-        'accuont_type',
+        'account_type',
         'email',
         'avatar_url',
-        'identity_document_url',
+        'identity_docomunt_url',
         'password',
     ];
 

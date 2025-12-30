@@ -24,9 +24,20 @@ class ApartmentResource extends JsonResource
                 'name' => $this->title,
                 'description' => $this->description,
                 'price_per_night' => $this->price,
-                'rating' => $this->rating
+                'rating' => $this->rating_avg,
+                'photosURL' => $this->photosURL,
             ];
         }
+
+        if ($request->route()->getName() == 'getFavoriteApar') {
+            return [
+                'id' => $this->id,
+                'name' => $this->title,
+                'price_per_night' => $this->price,
+                'photosURL' => $this->photosURL,
+            ];
+        }
+
         return parent::toArray($request);
     }
 }

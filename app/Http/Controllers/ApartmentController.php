@@ -40,5 +40,11 @@ class ApartmentController extends Controller
         $apartment = Apartment::findOrFail($id);
         $apartment = new ApartmentResource($apartment);
         return response()->json($apartment);
+    }
+    public function getFavoriteApartments()
+    {
+        $favoriteApartments = Apartment::where('is_favorite', true)->get();
+        $favoriteApartments = ApartmentResource::collection($favoriteApartments);
+        return response()->json($favoriteApartments);
     }   
 }
