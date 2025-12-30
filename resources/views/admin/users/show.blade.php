@@ -71,7 +71,7 @@
                                                     'APPROVED' => 'موافق عليه',
                                                     'REJECTED' => 'مرفوض',
                                                 ];
-                                                $status = $user->owner_status ?? 'PENDING';
+                                                $status = $user->status ?? 'PENDING';
                                             @endphp
                                             <span class="badge bg-{{ $statusColors[$status] ?? 'secondary' }}">
                                                 {{ $statusLabels[$status] ?? $status }}

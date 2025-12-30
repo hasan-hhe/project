@@ -5,9 +5,7 @@
         <div class="page-inner">
             @include('admin.components.page-header', [
                 'title' => 'أصحاب الشقق',
-                'arr' => [
-                    ['title' => 'أصحاب الشقق', 'link' => route('admin.apartment-owners.index')],
-                ],
+                'arr' => [['title' => 'أصحاب الشقق', 'link' => route('admin.apartment-owners.index')]],
             ])
             <div class="col-md-12">
                 <div class="card">
@@ -23,12 +21,9 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="search">البحث</label>
-                                        <input type="text" 
-                                               name="search" 
-                                               id="search" 
-                                               class="form-control" 
-                                               placeholder="ابحث بالاسم، الهاتف، أو البريد الإلكتروني"
-                                               value="{{ request('search') }}">
+                                        <input type="text" name="search" id="search" class="form-control"
+                                            placeholder="ابحث بالاسم، الهاتف، أو البريد الإلكتروني"
+                                            value="{{ request('search') }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -36,9 +31,12 @@
                                         <label for="status">فلترة حسب الحالة</label>
                                         <select name="status" id="status" class="form-control">
                                             <option value="">جميع الحالات</option>
-                                            <option value="PENDING" {{ request('status') == 'PENDING' ? 'selected' : '' }}>قيد الانتظار</option>
-                                            <option value="APPROVED" {{ request('status') == 'APPROVED' ? 'selected' : '' }}>موافق عليه</option>
-                                            <option value="REJECTED" {{ request('status') == 'REJECTED' ? 'selected' : '' }}>مرفوض</option>
+                                            <option value="PENDING" {{ request('status') == 'PENDING' ? 'selected' : '' }}>
+                                                قيد الانتظار</option>
+                                            <option value="APPROVED"
+                                                {{ request('status') == 'APPROVED' ? 'selected' : '' }}>موافق عليه</option>
+                                            <option value="REJECTED"
+                                                {{ request('status') == 'REJECTED' ? 'selected' : '' }}>مرفوض</option>
                                         </select>
                                     </div>
                                 </div>
@@ -47,7 +45,8 @@
                                         <label>&nbsp;</label>
                                         <div>
                                             <button type="submit" class="btn btn-primary">بحث</button>
-                                            <a href="{{ route('admin.apartment-owners.index') }}" class="btn btn-secondary">إعادة تعيين</a>
+                                            <a href="{{ route('admin.apartment-owners.index') }}"
+                                                class="btn btn-secondary">إعادة تعيين</a>
                                         </div>
                                     </div>
                                 </div>
@@ -71,7 +70,9 @@
                                 <tbody>
                                     @foreach ($owners as $i => $owner)
                                         <tr>
-                                            <td><a href="{{ route('admin.apartment-owners.show', $owner->id) }}">{{ $i + 1 }}</a></td>
+                                            <td><a
+                                                    href="{{ route('admin.apartment-owners.show', $owner->id) }}">{{ $i + 1 }}</a>
+                                            </td>
                                             <td>{{ $owner->first_name }}</td>
                                             <td>{{ $owner->last_name }}</td>
                                             <td>{{ $owner->phone_number ?? '---' }}</td>
@@ -89,7 +90,7 @@
                                                         'APPROVED' => 'موافق عليه',
                                                         'REJECTED' => 'مرفوض',
                                                     ];
-                                                    $status = $owner->owner_status ?? 'PENDING';
+                                                    $status = $owner->status ?? 'PENDING';
                                                 @endphp
                                                 <span class="badge bg-{{ $statusColors[$status] ?? 'secondary' }}">
                                                     {{ $statusLabels[$status] ?? $status }}
@@ -100,12 +101,24 @@
                                                     'buttons' => [
                                                         [
                                                             'type' => 'href',
-                                                            'url' => route('admin.apartment-owners.show', $owner->id),
+                                                            'url' => route(
+                                                                'admin.apartment-owners.show',
+                                                                $owner->id),
                                                             'icon' => 'fa-eye',
                                                             'text' => 'عرض',
                                                             'class' => 'text-info',
                                                         ],
+                                                        [
+                                                            'type' => 'href',
+                                                            'url' => route('admin.users.edit', $owner->id),
+                                                            'icon' => 'fa-edit',
+                                                            'text' => 'تعديل',
+                                                            'class' => 'text-secondary',
+                                                        ],
                                                     ],
+                                                    'withDelete' => true,
+                                                    'urlDelete' => route('admin.users.destroy', $owner->id),
+                                                    'itemId' => $owner->id,
                                                 ])
                                             </td>
                                         </tr>
@@ -126,4 +139,3 @@
 @endpush
 @push('scripts')
 @endpush
-

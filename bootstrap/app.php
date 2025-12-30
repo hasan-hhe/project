@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\Active;
+use App\Http\Middleware\Admin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +19,21 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->appendToGroup('admin', [
+            Admin::class
+        ]);
+
+        $middleware->prependToGroup('admin', [
+            Admin::class
+        ]);
+
+        $middleware->appendToGroup('active', [
+            Active::class
+        ]);
+
+        $middleware->prependToGroup('active', [
+            Active::class
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

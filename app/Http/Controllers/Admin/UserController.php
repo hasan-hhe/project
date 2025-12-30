@@ -89,8 +89,8 @@ class UserController extends Controller
                 'password' => Hash::make($request->password),
                 'avatar_url' => $avatarUrl,
                 'identity_docomunt_url' => $identityDocumentUrl,
-                'owner_status' => $request->account_type == 'OWNER'
-                    ? ($request->owner_status ?? 'PENDING')
+                'status' => $request->account_type == 'OWNER'
+                    ? ($request->status ?? 'PENDING')
                     : null,
             ]);
 
@@ -189,9 +189,9 @@ class UserController extends Controller
             }
 
             if ($request->account_type == 'OWNER') {
-                $updateData['owner_status'] = $request->owner_status ?? 'PENDING';
+                $updateData['status'] = $request->status ?? 'PENDING';
             } else {
-                $updateData['owner_status'] = null;
+                $updateData['status'] = null;
             }
 
             $user->update($updateData);

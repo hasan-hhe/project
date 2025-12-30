@@ -16,11 +16,11 @@ return new class extends Migration
 
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('notification_id')->constrained('notifications')->cascadeOnDelete();
-            
+
             $table->boolean('is_seen')->default(false);
             $table->boolean('is_active')->default(true);
 
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
 

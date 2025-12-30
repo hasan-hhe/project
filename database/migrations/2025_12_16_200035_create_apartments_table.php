@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('rating_avg')->default(5);
             $table->boolean('is_active')->default(false);
             $table->boolean('is_favorite')->default(false);
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
 

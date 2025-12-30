@@ -42,7 +42,7 @@ class UserSeeder extends Seeder
                 'email' => $owner[3],
                 'password' => Hash::make('password'),
                 'account_type' => 'OWNER',
-                'owner_status' => $owner[4],
+                'status' => $owner[4],
                 'date_of_birth' => Carbon::now()->subYears(25)->subDays(rand(0, 365))->format('Y-m-d'),
             ]);
         }

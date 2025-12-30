@@ -58,7 +58,7 @@ class ApartmentController extends Controller
     public function create()
     {
         $owners = User::where('account_type', 'OWNER')
-            ->where('owner_status', 'APPROVED')
+            ->where('status', 'APPROVED')
             ->get();
         $governorates = Governorate::all();
         $cities = City::all();
@@ -130,7 +130,7 @@ class ApartmentController extends Controller
     public function edit(Apartment $apartment)
     {
         $owners = User::where('account_type', 'OWNER')
-            ->where('owner_status', 'APPROVED')
+            ->where('status', 'APPROVED')
             ->get();
         $governorates = Governorate::all();
         $cities = City::all();
@@ -229,6 +229,51 @@ class ApartmentController extends Controller
             return redirect()
                 ->back()
                 ->with('error', __('حدث خطأ أثناء تغيير الحالة'));
+        }
+    }
+
+    /**
+     * Delete multiple apartments.
+     */
+    public function destroyCheck(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*' => 'exists:apartments,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($request->input('items') as $apartmentId) {
+                $apartment = Apartment::find($apartmentId);
+
+                if (!$apartment) {
+                    continue;
+                }
+
+                // التحقق من وجود حجوزات
+                $bookingsCount = $apartment->bookings()->count();
+                if ($bookingsCount > 0) {
+                    DB::rollBack();
+                    return redirect()
+                        ->back()
+                        ->with('error', __('لا يمكن حذف الشقة "' . $apartment->title . '" لأنها لديها ' . $bookingsCount . ' حجز'));
+                }
+
+                $apartment->delete();
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->back()
+                ->with('success', __('تم حذف الشقق المحددة بنجاح'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->with('error', __('حدث خطأ أثناء حذف الشقق: ') . $e->getMessage());
         }
     }
 }

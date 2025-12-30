@@ -4,7 +4,7 @@
         <div class="logo-header" data-background-color="dark">
             <a href="" class="logo d-none d-lg-flex">
                 <img src="{{ asset('assets/img/logo.png') }}" alt="navbar brand" class="navbar-brand" height="180px"
-                    style="margin-right: -35px !important;margin-top: 50px !important;" />
+                    style="margin-right: -35px !important;margin-top: 70px !important;" />
             </a>
             <div class="nav-toggle">
                 <button class="btn btn-toggle toggle-sidebar">
@@ -20,7 +20,7 @@
         </div>
         <!-- End Logo Header -->
     </div>
-    <div class="sidebar-wrapper scrollbar scrollbar-inner mt-5">
+    <div class="sidebar-wrapper scrollbar scrollbar-inner" style="margin-top: 60px">
         <div class="sidebar-content">
             <ul class="nav nav-secondary">
                 <li class="nav-item {{ Request::is('admin/dashboard') ? 'active' : '' }}">
@@ -80,6 +80,24 @@
                     <a href="{{ route('admin.notifications.index') }}">
                         <i class="fas fa-bell"></i>
                         <p>الإشعارات</p>
+                    </a>
+                </li>
+                <li class="nav-item {{ Request::is('admin/modification-requests*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.modification-requests.index') }}">
+                        <i class="fas fa-edit"></i>
+                        <p>طلبات التعديل</p>
+                    </a>
+                </li>
+                <li class="nav-item {{ Request::is('admin/pending-approvals*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.pending-approvals.index') }}">
+                        <i class="fas fa-user-clock"></i>
+                        <p>بانتظار الموافقة</p>
+                    </a>
+                </li>
+                <li class="nav-item {{ Request::is('admin/wallet*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.wallet.index') }}">
+                        <i class="fas fa-wallet"></i>
+                        <p>شحن محفظة المستأجرين</p>
                     </a>
                 </li>
             </ul>

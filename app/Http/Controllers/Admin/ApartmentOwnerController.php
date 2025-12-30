@@ -19,7 +19,7 @@ class ApartmentOwnerController extends Controller
 
         // Filter by status
         if ($request->has('status') && !empty($request->status)) {
-            $query->where('owner_status', $request->status);
+            $query->where('status', $request->status);
         }
 
         // Search by name, phone, or email
@@ -60,12 +60,12 @@ class ApartmentOwnerController extends Controller
     public function updateStatus(Request $request, User $owner)
     {
         $request->validate([
-            'owner_status' => 'required|in:PENDING,APPROVED,REJECTED',
+            'status' => 'required|in:PENDING,APPROVED,REJECTED',
         ]);
 
         try {
             $owner->update([
-                'owner_status' => $request->owner_status,
+                'status' => $request->status,
             ]);
 
             $statusLabels = [
@@ -74,7 +74,7 @@ class ApartmentOwnerController extends Controller
                 'REJECTED' => 'مرفوض',
             ];
 
-            return redirect()->back()->with('success', __('تم تغيير حالة الحساب إلى: ' . $statusLabels[$request->owner_status]));
+            return redirect()->back()->with('success', __('تم تغيير حالة الحساب إلى: ' . $statusLabels[$request->status]));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', __('حدث خطأ أثناء تحديث الحالة'));
         }

@@ -96,18 +96,18 @@
                                     ])
                                 </div>
 
-                                <div class="col-md-6" id="owner_status_section" style="display: none;">
+                                <div class="col-md-6" id="status_section" style="display: none;">
                                     <span class="ms-4">حالة صاحب الشقة</span>
                                     @include('admin.components.select', [
-                                        'selectedId' => 'owner_status',
+                                        'selectedId' => 'status',
                                         'label' => '',
                                         'items' => collect($ownerStatuses)->map(function($label, $value) {
                                             return (object)['value' => $value, 'label' => $label];
                                         })->values(),
                                         'name' => 'label',
                                         'attr' => 'value',
-                                        'valueSelected' => old('owner_status', 'PENDING'),
-                                        'nameForm' => 'owner_status',
+                                        'valueSelected' => old('status', 'PENDING'),
+                                        'nameForm' => 'status',
                                     ])
                                 </div>
 
@@ -151,13 +151,13 @@
 @push('scripts')
 <script>
     const accountTypeSelect = document.getElementById('account_type');
-    const ownerStatusSection = document.getElementById('owner_status_section');
+    const statusSection = document.getElementById('status_section');
 
     function toggleOwnerStatus() {
         if (accountTypeSelect.value === 'OWNER') {
-            ownerStatusSection.style.display = 'block';
+            statusSection.style.display = 'block';
         } else {
-            ownerStatusSection.style.display = 'none';
+            statusSection.style.display = 'none';
         }
     }
 

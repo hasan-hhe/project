@@ -10,12 +10,15 @@ return new class extends Migration
     {
         Schema::create('booking_change', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('requested_by_user_id');
+            $table->foreignId('requested_by_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('booking_id')->constrained()->onDelete('cascade');
             $table->date('new_start_date');
             $table->date('new_end_date');
-            $table->enum('status', ['PENDING', 'CONFIRMED', 'CANCLED', 'COMPLETED'])->default('PENDING');
+            $table->enum('status', ['PENDING', 'APPROVED', 'REJECTED', 'CONFIRMED', 'CANCLED', 'COMPLETED'])->default('PENDING');
             $table->text('comment')->nullable();
+            $table->text('admin_comment')->nullable();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
         });
     }

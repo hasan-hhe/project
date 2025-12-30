@@ -5,9 +5,7 @@
         <div class="page-inner">
             @include('admin.components.page-header', [
                 'title' => 'الشقق',
-                'arr' => [
-                    ['title' => 'الشقق', 'link' => route('admin.apartments.index')],
-                ],
+                'arr' => [['title' => 'الشقق', 'link' => route('admin.apartments.index')]],
             ])
             <div class="col-md-12">
                 <div class="card">
@@ -23,6 +21,9 @@
                                         'text' => 'إضافة شقة',
                                     ],
                                 ],
+                                'withDeleteChecked' => 1,
+                                'withDeleteAll' => 1,
+                                'urlDeleteAll' => route('admin.apartments.destroy-check'),
                             ])
                         </div>
                     </div>
@@ -32,44 +33,51 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="search">البحث</label>
-                                        <input type="text" 
-                                               name="search" 
-                                               id="search" 
-                                               class="form-control" 
-                                               placeholder="ابحث بالعنوان أو الوصف"
-                                               value="{{ request('search') }}">
+                                        @include('admin.components.input', [
+                                            'type' => 'text',
+                                            'name' => 'search',
+                                            'id' => 'search',
+                                            'label' => 'البحث',
+                                            'value' => request('search'),
+                                        ])
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="status">فلترة حسب الحالة</label>
-                                        <select name="status" id="status" class="form-control">
-                                            <option value="">جميع الحالات</option>
-                                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>نشط</option>
-                                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>غير نشط</option>
-                                        </select>
+                                        @include('admin.components.select', [
+                                            'selectedId' => 'status',
+                                            'nameForm' => 'status',
+                                            'label' => 'الحالة',
+                                            'items' => [
+                                                (object) ['id' => 'active', 'name' => 'نشط'],
+                                                (object) ['id' => 'inactive', 'name' => 'غير نشط'],
+                                                (object) ['id' => '', 'name' => 'جميع الحالات'],
+                                            ],
+                                            'valueSelected' => request('status'),
+                                            'name' => 'name',
+                                            'attr' => 'id',
+                                        ])
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="owner_id">فلترة حسب صاحب الشقة</label>
-                                        <select name="owner_id" id="owner_id" class="form-control">
-                                            <option value="">جميع أصحاب الشقق</option>
-                                            @foreach($owners as $owner)
-                                                <option value="{{ $owner->id }}" {{ request('owner_id') == $owner->id ? 'selected' : '' }}>
-                                                    {{ $owner->first_name }} {{ $owner->last_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        @include('admin.components.select', [
+                                            'selectedId' => 'owner_id',
+                                            'nameForm' => 'owner_id',
+                                            'label' => 'صاحب الشقة',
+                                            'items' => $owners,
+                                            'name' => 'first_name',
+                                            'attr' => 'id',
+                                            'valueSelected' => request('owner_id'),
+                                        ])
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group">
-                                        <label>&nbsp;</label>
-                                        <div>
+                                        <div class="d-flex gap-2">
                                             <button type="submit" class="btn btn-primary">بحث</button>
-                                            <a href="{{ route('admin.apartments.index') }}" class="btn btn-secondary">إعادة تعيين</a>
+                                            <a href="{{ route('admin.apartments.index') }}" class="btn btn-secondary">إعادة
+                                                تعيين</a>
                                         </div>
                                     </div>
                                 </div>
@@ -93,7 +101,9 @@
                                 <tbody>
                                     @foreach ($apartments as $i => $apartment)
                                         <tr>
-                                            <td><a href="{{ route('admin.apartments.show', $apartment->id) }}">{{ $i + 1 }}</a></td>
+                                            <td><a
+                                                    href="{{ route('admin.apartments.show', $apartment->id) }}">{{ $i + 1 }}</a>
+                                            </td>
                                             <td>{{ $apartment->title }}</td>
                                             <td>
                                                 <a href="{{ route('admin.users.show', $apartment->owner_id) }}">
@@ -104,7 +114,8 @@
                                             <td>{{ $apartment->rooms_count }}</td>
                                             <td>{{ $apartment->rating_avg ?? '---' }}</td>
                                             <td>
-                                                <span class="badge bg-{{ $apartment->is_active ? 'success' : 'secondary' }}">
+                                                <span
+                                                    class="badge bg-{{ $apartment->is_active ? 'success' : 'secondary' }}">
                                                     {{ $apartment->is_active ? 'نشط' : 'غير نشط' }}
                                                 </span>
                                             </td>
@@ -113,28 +124,36 @@
                                                     'buttons' => [
                                                         [
                                                             'type' => 'href',
-                                                            'url' => route('admin.apartments.show', $apartment->id),
+                                                            'url' => route(
+                                                                'admin.apartments.show',
+                                                                $apartment->id),
                                                             'icon' => 'fa-eye',
                                                             'text' => 'عرض',
                                                             'class' => 'text-info',
                                                         ],
                                                         [
                                                             'type' => 'href',
-                                                            'url' => route('admin.apartments.edit', $apartment->id),
+                                                            'url' => route(
+                                                                'admin.apartments.edit',
+                                                                $apartment->id),
                                                             'icon' => 'fa-edit',
                                                             'text' => 'تعديل',
                                                             'class' => 'text-secondary',
                                                         ],
                                                         [
                                                             'type' => 'href',
-                                                            'url' => route('admin.apartments.toggle-active', $apartment->id),
+                                                            'url' => route(
+                                                                'admin.apartments.toggle-active',
+                                                                $apartment->id),
                                                             'icon' => 'icon-refresh',
                                                             'text' => 'تحديث',
                                                             'class' => 'text-warning',
                                                         ],
                                                     ],
                                                     'withDelete' => true,
-                                                    'urlDelete' => route('admin.apartments.destroy', $apartment->id),
+                                                    'urlDelete' => route(
+                                                        'admin.apartments.destroy',
+                                                        $apartment->id),
                                                     'itemId' => $apartment->id,
                                                 ])
                                             </td>
@@ -156,4 +175,3 @@
 @endpush
 @push('scripts')
 @endpush
-

@@ -43,7 +43,7 @@
             max-width: 525px;
             min-height: 670px;
             position: relative;
-            background: url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQNJriuleusU4oIvXn53y8NPUEJk-XCVqFEA&s) no-repeat center;
+            background: url({{ asset('assets/img/background-login.jpg') }}) no-repeat center;
             background-size: 100% 100%;
             box-shadow: 0 12px 15px 0 rgba(0, 0, 0, .24), 0 17px 50px 0 rgba(0, 0, 0, .19);
         }

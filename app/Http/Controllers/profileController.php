@@ -17,7 +17,7 @@ class profileController extends Controller
             'last_name' => $user->last_name,
             'phone_number' => $user->phone_number,
             'account_type' => $user->account_type,
-            'owner_status' => $user->owner_status,
+            'status' => $user->status,
             'date_of_birth' => $user->date_of_birth,
             'email' => $user->email
         ]);

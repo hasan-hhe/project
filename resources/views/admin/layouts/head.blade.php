@@ -3,17 +3,39 @@
     <title>@yield('title')</title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
 
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/logo-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/img/logo-16x16.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/logo-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/logo.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/img/logo.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/logo.png') }}">
 
 
     <link rel="stylesheet" href="{{ asset('assets/css/fonts.min.css') }}">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Tajawal Font - Local */
+        @font-face {
+            font-family: 'Tajawal';
+            src: url('{{ asset('assets/fonts/tajawal/Tajawal-Regular.ttf') }}') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
 
+        @font-face {
+            font-family: 'Tajawal';
+            src: url('{{ asset('assets/fonts/tajawal/Tajawal-Medium.ttf') }}') format('truetype');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Tajawal';
+            src: url('{{ asset('assets/fonts/tajawal/Tajawal-Bold.ttf') }}') format('truetype');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
 
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.rtl.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/plugins.rtl.css') }}" />

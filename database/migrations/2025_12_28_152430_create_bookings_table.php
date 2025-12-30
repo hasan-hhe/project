@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('total_price', 12, 2);
             $table->string('cancel_reason')->nullable();
             $table->enum('status', ['PENDING', 'CONFIRMED', 'CANCLED', 'COMPLETED'])->default('PENDING');
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
     public function down(): void

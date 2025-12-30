@@ -20,12 +20,13 @@ class User extends Authenticatable
         'date_of_birth',
         'accuont_type',
         'account_type',
-        'owner_status',
+        'status',
         'email',
         'avatar_url',
         'identity_document_url',
         'identity_docomunt_url',
         'password',
+        'wallet_balance',
     ];
 
     protected $hidden = [
@@ -39,6 +40,7 @@ class User extends Authenticatable
             'date_of_birth' => 'date',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'wallet_balance' => 'decimal:2',
         ];
     }
 
@@ -74,12 +76,12 @@ class User extends Authenticatable
 
     public function appartments()
     {
-        return $this->hasMany(Apartment::class);
+        return $this->hasMany(Apartment::class, 'owner_id');
     }
 
     public function bookings()
     {
-        return $this->hasMany(Booking::class);
+        return $this->hasMany(Booking::class, 'renter_id');
     }
 
     public function ownerConservations()

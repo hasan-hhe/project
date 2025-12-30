@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('url');
             $table->boolean('is_cover')->default(false);
             $table->unsignedInteger('sort_order')->default(0);
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
 

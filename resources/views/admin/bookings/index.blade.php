@@ -5,9 +5,7 @@
         <div class="page-inner">
             @include('admin.components.page-header', [
                 'title' => 'الحجوزات',
-                'arr' => [
-                    ['title' => 'الحجوزات', 'link' => route('admin.bookings.index')],
-                ],
+                'arr' => [['title' => 'الحجوزات', 'link' => route('admin.bookings.index')]],
             ])
             <div class="col-md-12">
                 <div class="card">
@@ -23,12 +21,8 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="search">البحث</label>
-                                        <input type="text" 
-                                               name="search" 
-                                               id="search" 
-                                               class="form-control" 
-                                               placeholder="ابحث بالاسم أو الشقة"
-                                               value="{{ request('search') }}">
+                                        <input type="text" name="search" id="search" class="form-control"
+                                            placeholder="ابحث بالاسم أو الشقة" value="{{ request('search') }}">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -36,10 +30,14 @@
                                         <label for="status">فلترة حسب الحالة</label>
                                         <select name="status" id="status" class="form-control">
                                             <option value="">جميع الحالات</option>
-                                            <option value="PENDING" {{ request('status') == 'PENDING' ? 'selected' : '' }}>قيد الانتظار</option>
-                                            <option value="CONFIRMED" {{ request('status') == 'CONFIRMED' ? 'selected' : '' }}>مؤكدة</option>
-                                            <option value="CANCLED" {{ request('status') == 'CANCLED' ? 'selected' : '' }}>ملغاة</option>
-                                            <option value="COMPLETED" {{ request('status') == 'COMPLETED' ? 'selected' : '' }}>مكتملة</option>
+                                            <option value="PENDING" {{ request('status') == 'PENDING' ? 'selected' : '' }}>
+                                                قيد الانتظار</option>
+                                            <option value="CONFIRMED"
+                                                {{ request('status') == 'CONFIRMED' ? 'selected' : '' }}>مؤكدة</option>
+                                            <option value="CANCLED" {{ request('status') == 'CANCLED' ? 'selected' : '' }}>
+                                                ملغاة</option>
+                                            <option value="COMPLETED"
+                                                {{ request('status') == 'COMPLETED' ? 'selected' : '' }}>مكتملة</option>
                                         </select>
                                     </div>
                                 </div>
@@ -48,8 +46,9 @@
                                         <label for="renter_id">فلترة حسب المستأجر</label>
                                         <select name="renter_id" id="renter_id" class="form-control">
                                             <option value="">جميع المستأجرين</option>
-                                            @foreach($renters as $renter)
-                                                <option value="{{ $renter->id }}" {{ request('renter_id') == $renter->id ? 'selected' : '' }}>
+                                            @foreach ($renters as $renter)
+                                                <option value="{{ $renter->id }}"
+                                                    {{ request('renter_id') == $renter->id ? 'selected' : '' }}>
                                                     {{ $renter->first_name }} {{ $renter->last_name }}
                                                 </option>
                                             @endforeach
@@ -61,7 +60,8 @@
                                         <label>&nbsp;</label>
                                         <div>
                                             <button type="submit" class="btn btn-primary">بحث</button>
-                                            <a href="{{ route('admin.bookings.index') }}" class="btn btn-secondary">إعادة تعيين</a>
+                                            <a href="{{ route('admin.bookings.index') }}" class="btn btn-secondary">إعادة
+                                                تعيين</a>
                                         </div>
                                     </div>
                                 </div>
@@ -85,7 +85,9 @@
                                 <tbody>
                                     @foreach ($bookings as $i => $booking)
                                         <tr>
-                                            <td><a href="{{ route('admin.bookings.show', $booking->id) }}">{{ $i + 1 }}</a></td>
+                                            <td><a
+                                                    href="{{ route('admin.bookings.show', $booking->id) }}">{{ $i + 1 }}</a>
+                                            </td>
                                             <td>
                                                 <a href="{{ route('admin.users.show', $booking->renter_id) }}">
                                                     {{ $booking->renter->first_name }} {{ $booking->renter->last_name }}
@@ -114,7 +116,8 @@
                                                         'COMPLETED' => 'مكتملة',
                                                     ];
                                                 @endphp
-                                                <span class="badge bg-{{ $statusColors[$booking->status] ?? 'secondary' }}">
+                                                <span
+                                                    class="badge bg-{{ $statusColors[$booking->status] ?? 'secondary' }}">
                                                     {{ $statusLabels[$booking->status] ?? $booking->status }}
                                                 </span>
                                             </td>
@@ -152,4 +155,3 @@
 @endpush
 @push('scripts')
 @endpush
-

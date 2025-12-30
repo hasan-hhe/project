@@ -11,7 +11,7 @@ Route::prefix("auth")->group(function () {
     Route::post('/login', [SignupController::class, "login"]);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/my-profile', [ProfileController::class, 'getUserInformation']);
     Route::post('/logout', [SignupController::class, 'logout']);
 });

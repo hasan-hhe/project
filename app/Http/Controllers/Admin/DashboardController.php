@@ -58,13 +58,13 @@ class DashboardController extends Controller
 
         // 👤 إحصائيات أصحاب الشقق
         $pendingOwners = User::where('account_type', 'OWNER')
-            ->where('owner_status', 'PENDING')
+            ->where('status', 'PENDING')
             ->count();
         $approvedOwners = User::where('account_type', 'OWNER')
-            ->where('owner_status', 'APPROVED')
+            ->where('status', 'APPROVED')
             ->count();
         $rejectedOwners = User::where('account_type', 'OWNER')
-            ->where('owner_status', 'REJECTED')
+            ->where('status', 'REJECTED')
             ->count();
 
         // 📆 إحصائيات الأسبوع الحالي (للرسم البياني)

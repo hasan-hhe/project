@@ -2,7 +2,7 @@
     <div class="main-header-logo">
         <!-- Logo Header -->
         <div class="logo-header" data-background-color="dark">
-            <a href="{{ asset('index.html') }}" class="logo">
+            <a href="{{ route('admin.dashboard.index') }}" class="logo">
                 <img src="{{ asset('assets/img/logo.png') }}" alt="navbar brand" class="navbar-brand" height="40px" />
             </a>
             <div class="nav-toggle">
@@ -59,7 +59,8 @@
                         </div>
                         <span class="profile-username">
                             <span class="op-7">مرحبا,</span>
-                            <span class="fw-bold">{{ auth()->user()->name }}</span>
+                            <span class="fw-bold">{{ auth()->user()->first_name }}
+                                {{ auth()->user()->last_name }}</span>
                         </span>
                     </a>
                     <ul class="dropdown-menu dropdown-user animated fadeIn">

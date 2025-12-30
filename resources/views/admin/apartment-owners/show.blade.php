@@ -55,7 +55,7 @@
                                                     'APPROVED' => 'موافق عليه',
                                                     'REJECTED' => 'مرفوض',
                                                 ];
-                                                $status = $owner->owner_status ?? 'PENDING';
+                                                $status = $owner->status ?? 'PENDING';
                                             @endphp
                                             <span class="badge bg-{{ $statusColors[$status] ?? 'secondary' }}">
                                                 {{ $statusLabels[$status] ?? $status }}
@@ -78,11 +78,11 @@
                                 @csrf
                                 @method('PATCH')
                                 <div class="form-group">
-                                    <label for="owner_status">اختر الحالة</label>
-                                    <select name="owner_status" id="owner_status" class="form-control" required>
-                                        <option value="PENDING" {{ ($owner->owner_status ?? 'PENDING') == 'PENDING' ? 'selected' : '' }}>قيد الانتظار</option>
-                                        <option value="APPROVED" {{ ($owner->owner_status ?? '') == 'APPROVED' ? 'selected' : '' }}>موافق عليه</option>
-                                        <option value="REJECTED" {{ ($owner->owner_status ?? '') == 'REJECTED' ? 'selected' : '' }}>مرفوض</option>
+                                    <label for="status">اختر الحالة</label>
+                                    <select name="status" id="status" class="form-control" required>
+                                        <option value="PENDING" {{ ($owner->status ?? 'PENDING') == 'PENDING' ? 'selected' : '' }}>قيد الانتظار</option>
+                                        <option value="APPROVED" {{ ($owner->status ?? '') == 'APPROVED' ? 'selected' : '' }}>موافق عليه</option>
+                                        <option value="REJECTED" {{ ($owner->status ?? '') == 'REJECTED' ? 'selected' : '' }}>مرفوض</option>
                                     </select>
                                 </div>
                                 <div class="form-group mt-3">

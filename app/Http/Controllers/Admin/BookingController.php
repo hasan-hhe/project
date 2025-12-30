@@ -36,14 +36,14 @@ class BookingController extends Controller
         // Search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->whereHas('renter', function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('renter', function ($q) use ($search) {
                     $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%");
+                        ->orWhere('last_name', 'like', "%{$search}%");
                 })
-                ->orWhereHas('apartment', function($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%");
-                });
+                    ->orWhereHas('apartment', function ($q) use ($search) {
+                        $q->where('title', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -62,7 +62,7 @@ class BookingController extends Controller
     public function show(Booking $booking)
     {
         $booking->load(['renter', 'apartment.owner', 'reviews.user']);
-        
+
         return view('admin.bookings.show', compact('booking'));
     }
 
@@ -120,4 +120,3 @@ class BookingController extends Controller
         }
     }
 }
-

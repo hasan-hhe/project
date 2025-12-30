@@ -5,9 +5,7 @@
         <div class="page-inner">
             @include('admin.components.page-header', [
                 'title' => 'المدراء',
-                'arr' => [
-                    ['title' => 'المدراء', 'link' => route('admin.users.index', ['type' => 'admin'])],
-                ],
+                'arr' => [['title' => 'المدراء', 'link' => route('admin.users.index', ['type' => 'admin'])]],
             ])
             <div class="col-md-12">
                 <div class="card">
@@ -24,6 +22,7 @@
                                     ],
                                 ],
                                 'withDeleteChecked' => 1,
+                                'withDeleteAll' => 1,
                                 'urlDeleteAll' => route('admin.users.destroy-check'),
                             ])
                         </div>
@@ -44,7 +43,8 @@
                                 <tbody>
                                     @foreach ($users as $i => $user)
                                         <tr>
-                                            <td><a href="{{ route('admin.users.show', $user->id) }}">{{ $i + 1 }}</a></td>
+                                            <td><a href="{{ route('admin.users.show', $user->id) }}">{{ $i + 1 }}</a>
+                                            </td>
                                             <td>{{ $user->first_name }}</td>
                                             <td>{{ $user->last_name }}</td>
                                             <td>{{ $user->phone_number ?? '---' }}</td>

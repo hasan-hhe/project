@@ -14,6 +14,9 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ApartmentController as AdminApartmentController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\ModificationRequestController;
+use App\Http\Controllers\Admin\PendingApprovalController;
+use App\Http\Controllers\Admin\WalletController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -25,12 +28,15 @@ Route::get('/', function () {
     return redirect()->route('admin.auth.login');
 });
 
-// Admin Routes
 Route::prefix('admin')->name('admin.')->group(function () {
     // Auth Routes
     Route::get('/login', [AuthController::class, 'getLogin'])->name('auth.login');
     Route::post('/login', [AuthController::class, 'login'])->name('auth.login.post');
     Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
+});
+
+// Admin Routes
+Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard Route
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
@@ -59,6 +65,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/apartments/{apartment}/edit', [AdminApartmentController::class, 'edit'])->name('apartments.edit');
     Route::patch('/apartments/{apartment}', [AdminApartmentController::class, 'update'])->name('apartments.update');
     Route::delete('/apartments/{apartment}', [AdminApartmentController::class, 'destroy'])->name('apartments.destroy');
+    Route::post('/apartments/destroy-check', [AdminApartmentController::class, 'destroyCheck'])->name('apartments.destroy-check');
     Route::get('/apartments/{apartment}/toggle-active', [AdminApartmentController::class, 'toggleActive'])->name('apartments.toggle-active');
 
     // Bookings Routes
@@ -82,29 +89,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/notifications/{notification}/toggle-active', [NotificationController::class, 'toggleActive'])->name('notifications.toggle-active');
     Route::post('/notifications/destroy-check', [NotificationController::class, 'destroyCheck'])->name('notifications.destroy-check');
     Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
+
+    // Modification Requests Routes
+    Route::get('/modification-requests', [ModificationRequestController::class, 'index'])->name('modification-requests.index');
+    Route::get('/modification-requests/{modificationRequest}', [ModificationRequestController::class, 'show'])->name('modification-requests.show');
+    Route::post('/modification-requests/{modificationRequest}/approve', [ModificationRequestController::class, 'approve'])->name('modification-requests.approve');
+    Route::post('/modification-requests/{modificationRequest}/reject', [ModificationRequestController::class, 'reject'])->name('modification-requests.reject');
+    Route::delete('/modification-requests/{modificationRequest}', [ModificationRequestController::class, 'destroy'])->name('modification-requests.destroy');
+
+    // Pending Approvals Routes
+    Route::get('/pending-approvals', [PendingApprovalController::class, 'index'])->name('pending-approvals.index');
+    Route::get('/pending-approvals/{user}', [PendingApprovalController::class, 'show'])->name('pending-approvals.show');
+    Route::post('/pending-approvals/{user}/approve', [PendingApprovalController::class, 'approve'])->name('pending-approvals.approve');
+    Route::post('/pending-approvals/{user}/reject', [PendingApprovalController::class, 'reject'])->name('pending-approvals.reject');
+    Route::post('/pending-approvals/approve-multiple', [PendingApprovalController::class, 'approveMultiple'])->name('pending-approvals.approve-multiple');
+
+    // Wallet Routes
+    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
+    Route::get('/wallet/{user}', [WalletController::class, 'show'])->name('wallet.show');
+    Route::post('/wallet/{user}/recharge', [WalletController::class, 'recharge'])->name('wallet.recharge');
 });
-// Route::get('/checkuser', [Controller1::class, "checkuser"]);
-// Route::get('/getalluser', [Controller1::class, "getalluser"]);
-// Route::get('/getallproduct', [Controller1::class, "getallproduct"]);
-// Route::post('/update_name', [Controller1::class, "update_name"]);
-// Route::delete('/deleteproduct/{id}', [Controller1::class, "deleteproduct"]);
-// Route::post('/products', [Controller1::class, "create"]);
-// Route::post('/test', [Controller1::class, "test"]);
-
-// Route::post('/signup', [SignupController::class, "signup"]);
-
-
-// Route::middleware(checktoken::class)->group(function () {
-//     Route::post('/checkuser_secured', [Controller2::class, "checkuser"]);
-//     Route::post('/delete', [Controller3::class, "deleteuser"]);
-// });
-// {
-//         "name":"burger",
-//         "discription":"Full",
-//         "price":1000
-//     },
-//     {
-//         "name":"salad",
-//         "discription":"katchap",
-//         "price":500
-//     }

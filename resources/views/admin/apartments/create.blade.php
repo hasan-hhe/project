@@ -20,10 +20,9 @@
                             @csrf
                             <div class="row">
                                 <div class="col-md-6">
-                                    <span class="ms-4">صاحب الشقة</span>
                                     @include('admin.components.select', [
                                         'selectedId' => 'owner_id',
-                                        'label' => '',
+                                        'label' => 'صاحب الشقة',
                                         'items' => $owners,
                                         'name' => 'first_name',
                                         'attr' => 'id',
@@ -34,10 +33,9 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">المحافظة</span>
                                     @include('admin.components.select', [
                                         'selectedId' => 'governorate_id',
-                                        'label' => '',
+                                        'label' => 'المحافظة',
                                         'items' => $governorates,
                                         'name' => 'name',
                                         'attr' => 'id',
@@ -48,10 +46,9 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">المدينة</span>
                                     @include('admin.components.select', [
                                         'selectedId' => 'city_id',
-                                        'label' => '',
+                                        'label' => 'المدينة',
                                         'items' => $cities,
                                         'name' => 'name',
                                         'attr' => 'id',
@@ -62,72 +59,75 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">العنوان</span>
                                     @include('admin.components.input', [
                                         'type' => 'text',
                                         'name' => 'title',
                                         'id' => 'title',
-                                        'label' => '',
+                                        'label' => 'العنوان',
                                         'value' => old('title'),
                                         'required' => true,
                                     ])
                                 </div>
 
                                 <div class="col-md-12">
-                                    <span class="ms-4">الوصف</span>
                                     @include('admin.components.textarea', [
                                         'name' => 'description',
                                         'id' => 'description',
-                                        'label' => '',
+                                        'label' => 'الوصف',
                                         'value' => old('description'),
                                         'required' => true,
                                     ])
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">السعر (SYP)</span>
                                     @include('admin.components.input', [
-                                        'type' => 'number',
+                                        'type' => 'text',
                                         'name' => 'price',
                                         'id' => 'price',
-                                        'label' => '',
+                                        'label' => 'السعر (SYP)',
                                         'value' => old('price'),
                                         'required' => true,
-                                        'attribute' => 'step=0.01 min=0',
+                                        'attribute' => 'oninput=validateNumber(this)',
                                     ])
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">عدد الغرف</span>
                                     @include('admin.components.input', [
-                                        'type' => 'number',
+                                        'type' => 'text',
                                         'name' => 'rooms_count',
                                         'id' => 'rooms_count',
-                                        'label' => '',
+                                        'label' => ' عدد الغرف',
                                         'value' => old('rooms_count'),
                                         'required' => true,
-                                        'attribute' => 'min=1',
+                                        'attribute' => 'oninput=validateNumber(this)',
                                     ])
                                 </div>
 
                                 <div class="col-md-12">
-                                    <span class="ms-4">عنوان الشارع</span>
                                     @include('admin.components.input', [
                                         'type' => 'text',
                                         'name' => 'address_line',
                                         'id' => 'address_line',
-                                        'label' => '',
+                                        'label' => 'عنوان الشارع',
                                         'value' => old('address_line'),
                                         'required' => true,
                                     ])
                                 </div>
 
-                                <div class="col-md-6">
-                                    <span class="ms-4">الحالة</span>
-                                    <div class="form-check form-switch mt-2">
-                                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="is_active">نشط</label>
-                                    </div>
+                                <div class="col-md-12">
+                                    @include('admin.components.select', [
+                                        'selectedId' => 'is_active',
+                                        'label' => 'الحالة',
+                                        'items' => [
+                                            (object) ['id' => 1, 'name' => 'نشط'],
+                                            (object) ['id' => 0, 'name' => 'غير نشط'],
+                                        ],
+                                        'name' => 'name',
+                                        'attr' => 'id',
+                                        'valueSelected' => old('is_active'),
+                                        'nameForm' => 'is_active',
+                                        'withSearch' => false,
+                                    ])
                                 </div>
 
                                 <div class="col-12">
@@ -148,4 +148,3 @@
 @endpush
 @push('scripts')
 @endpush
-

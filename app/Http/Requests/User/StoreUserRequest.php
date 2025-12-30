@@ -31,7 +31,7 @@ class StoreUserRequest extends FormRequest
             'password' => 'required|string|min:6',
             'avatar_url' => 'nullable|string',
             'identity_docomunt_url' => 'nullable|string',
-            'owner_status' => 'nullable|in:PENDING,APPROVED,REJECTED',
+            'status' => 'nullable|in:PENDING,APPROVED,REJECTED',
         ];
     }
 

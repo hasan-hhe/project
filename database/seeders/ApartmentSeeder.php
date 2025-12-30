@@ -15,7 +15,7 @@ class ApartmentSeeder extends Seeder
     public function run(): void
     {
         $owners = User::where('account_type', 'OWNER')
-            ->where('owner_status', 'APPROVED')
+            ->where('status', 'APPROVED')
             ->get();
 
         $cities = City::all();
