@@ -10,23 +10,27 @@ class Apartment extends Model
         use HasFactory;
 
         protected $fillable = [
+                'owner_id',
+                'governorate_id',
+                'city_id',
                 'title',
                 'description',
                 'price',
-                'room_count',
+                'rooms_count',
                 'address_line',
+                'rating_avg',
                 'is_active',
-                'is_favorite'
+                'is_favorite',
         ];
 
         public function owner()
         {
-                return $this->belongsTo(User::class);
+                return $this->belongsTo(User::class, 'owner_id');
         }
 
-        public function booking()
+        public function bookings()
         {
-                return $this->hasOne(Booking::class);
+                return $this->hasMany(Booking::class, 'apartment_id');
         }
 
         public function conservation()

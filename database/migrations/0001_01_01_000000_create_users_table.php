@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('email')->nullable()->unique();
             $table->string('phone_number')->unique();
             $table->string('avatar_url')->nullable();
-            $table->string('identity_docomunt_url');
+            $table->string('identity_document_url')->nullable();
             $table->enum('account_type', ['RENTER', 'OWNER', 'ADMIN']);
             $table->enum('owner_status', ['REJECTED', 'APPROVED', 'PENDING'])->default('PENDING');
             $table->timestamp('email_verified_at')->nullable();

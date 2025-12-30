@@ -19,9 +19,12 @@ class User extends Authenticatable
         'phone_number',
         'date_of_birth',
         'accuont_type',
+        'account_type',
+        'owner_status',
         'email',
         'avatar_url',
         'identity_document_url',
+        'identity_docomunt_url',
         'password',
     ];
 
@@ -37,6 +40,36 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     *
+     * @return string
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'id';
+    }
+
+    /**
+     * Get the unique identifier for the user.
+     *
+     * @return mixed
+     */
+    public function getAuthIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Get the password for the user.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->password;
     }
 
     public function appartments()
