@@ -6,6 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
+    protected $fillable = [
+        'content',
+        'attachment_url',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'read_at' => 'datetime'
+        ];
+    }
+
     public function sender()
     {
         return $this->belongsTo(User::class);
