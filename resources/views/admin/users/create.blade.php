@@ -20,36 +20,33 @@
                             @csrf
                             <div class="row">
                                 <div class="col-md-6">
-                                    <span class="ms-4">الاسم الأول</span>
                                     @include('admin.components.input', [
                                         'type' => 'text',
                                         'name' => 'first_name',
                                         'id' => 'first_name',
-                                        'label' => '',
+                                        'label' => 'الاسم الأول',
                                         'value' => old('first_name'),
                                         'required' => true,
                                     ])
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">الاسم الأخير</span>
                                     @include('admin.components.input', [
                                         'type' => 'text',
                                         'name' => 'last_name',
                                         'id' => 'last_name',
-                                        'label' => '',
+                                        'label' => 'الاسم الأخير',
                                         'value' => old('last_name'),
                                         'required' => true,
                                     ])
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">رقم الهاتف</span>
                                     @include('admin.components.input', [
                                         'type' => 'text',
                                         'name' => 'phone_number',
                                         'id' => 'phone_number',
-                                        'label' => '',
+                                        'label' => 'رقم الهاتف',
                                         'value' => old('phone_number'),
                                         'required' => true,
                                         'attribute' => 'oninput=validateNumber(this)',
@@ -57,37 +54,34 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">البريد الإلكتروني</span>
                                     @include('admin.components.input', [
                                         'type' => 'email',
                                         'name' => 'email',
                                         'id' => 'email',
-                                        'label' => '',
+                                        'label' => 'البريد الإلكتروني',
                                         'value' => old('email'),
                                         'required' => false,
                                     ])
                                 </div>
 
-                                <div class="col-md-6">
-                                    <span class="ms-4">تاريخ الميلاد</span>
+                                <div class="col-12">
                                     @include('admin.components.input', [
                                         'type' => 'date',
                                         'name' => 'date_of_birth',
                                         'id' => 'date_of_birth',
-                                        'label' => '',
+                                        'label' => 'تاريخ الميلاد',
                                         'value' => old('date_of_birth'),
                                         'required' => false,
                                     ])
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">نوع الحساب</span>
                                     @include('admin.components.select', [
                                         'selectedId' => 'account_type',
-                                        'label' => '',
-                                        'items' => collect($accountTypes)->map(function($label, $value) {
-                                            return (object)['value' => $value, 'label' => $label];
-                                        })->values(),
+                                        'label' => 'نوع الحساب',
+                                        'items' => collect($accountTypes)->map(function ($label, $value) {
+                                                return (object) ['value' => $value, 'label' => $label];
+                                            })->values(),
                                         'name' => 'label',
                                         'attr' => 'value',
                                         'valueSelected' => old('account_type'),
@@ -97,13 +91,12 @@
                                 </div>
 
                                 <div class="col-md-6" id="status_section" style="display: none;">
-                                    <span class="ms-4">حالة صاحب الشقة</span>
                                     @include('admin.components.select', [
                                         'selectedId' => 'status',
-                                        'label' => '',
-                                        'items' => collect($ownerStatuses)->map(function($label, $value) {
-                                            return (object)['value' => $value, 'label' => $label];
-                                        })->values(),
+                                        'label' => 'حالة صاحب الشقة',
+                                        'items' => collect($ownerStatuses)->map(function ($label, $value) {
+                                                return (object) ['value' => $value, 'label' => $label];
+                                            })->values(),
                                         'name' => 'label',
                                         'attr' => 'value',
                                         'valueSelected' => old('status', 'PENDING'),
@@ -112,12 +105,11 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <span class="ms-4">كلمة المرور</span>
                                     @include('admin.components.input', [
                                         'type' => 'password',
                                         'name' => 'password',
                                         'id' => 'password',
-                                        'label' => '',
+                                        'label' => 'كلمة المرور',
                                         'required' => true,
                                         'value' => old('password'),
                                     ])
@@ -125,12 +117,26 @@
 
                                 <div class="col-md-6">
                                     <span class="ms-4">الصورة الشخصية (اختياري)</span>
-                                    <input type="file" name="avatar_image" id="avatar_image" class="form-control" accept="image/*">
+                                    @include('admin.components.input', [
+                                        'type' => 'file',
+                                        'name' => 'avatar_image',
+                                        'value' => old('avatar_image'),
+                                        'id' => 'avatar_image',
+                                        'label' => 'صورة الشخصية (اختياري)',
+                                        'required' => false,
+                                    ])
                                 </div>
 
                                 <div class="col-md-6">
                                     <span class="ms-4">صورة الهوية (اختياري)</span>
-                                    <input type="file" name="identity_document_image" id="identity_document_image" class="form-control" accept="image/*">
+                                    @include('admin.components.input', [
+                                        'type' => 'file',
+                                        'name' => 'identity_document_image',
+                                        'value' => old('identity_document_image'),
+                                        'id' => 'identity_document_image',
+                                        'label' => 'صورة الهوية (اختياري)',
+                                        'required' => false,
+                                    ])
                                 </div>
 
                                 <div class="col-12">
@@ -149,19 +155,19 @@
 @endsection
 
 @push('scripts')
-<script>
-    const accountTypeSelect = document.getElementById('account_type');
-    const statusSection = document.getElementById('status_section');
+    <script>
+        const accountTypeSelect = document.getElementById('account_type');
+        const statusSection = document.getElementById('status_section');
 
-    function toggleOwnerStatus() {
-        if (accountTypeSelect.value === 'OWNER') {
-            statusSection.style.display = 'block';
-        } else {
-            statusSection.style.display = 'none';
+        function toggleOwnerStatus() {
+            if (accountTypeSelect.value === 'OWNER') {
+                statusSection.style.display = 'block';
+            } else {
+                statusSection.style.display = 'none';
+            }
         }
-    }
 
-    accountTypeSelect.addEventListener('change', toggleOwnerStatus);
-    toggleOwnerStatus(); // تشغيل عند تحميل الصفحة
-</script>
+        accountTypeSelect.addEventListener('change', toggleOwnerStatus);
+        toggleOwnerStatus(); // تشغيل عند تحميل الصفحة
+    </script>
 @endpush

@@ -29,9 +29,13 @@ use PhpParser\Node\Stmt\Return_;
 function uploadImage($image, $nameFolder, $nameDisk)
 {
     try {
-        $photoName = uniqid() . "." . $image->extension();
-        $path = $image->storeAs($nameFolder, $photoName, $nameDisk);
-        return '/' . 'images/' . $nameFolder . '/' . $photoName;
+        // $photoName = uniqid() . "." . $image->extension();
+        // $path = $image->storeAs($nameFolder, $photoName, $nameDisk);
+        // return '/' . 'images/' . $nameFolder . '/' . $photoName;
+
+        $path = $image->store($nameFolder, $nameDisk);
+        $url = Storage::url($path);
+        return $url;
     } catch (\Exception $e) {
     }
 }

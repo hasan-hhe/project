@@ -164,6 +164,36 @@
             </div>
             @endif
 
+            {{-- الصور --}}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="card-title">صور الشقة ({{ $apartment->photos->count() }})</h4>
+                </div>
+                <div class="card-body">
+                    @if($apartment->photos->count() > 0)
+                        <div class="row">
+                            @foreach($apartment->photos as $photo)
+                                <div class="col-md-2 mb-3">
+                                    <div class="position-relative">
+                                        <img src="{{ asset($photo->url) }}" class="img-thumbnail" alt="صورة الشقة" style="width: 100%; height: 150px; object-fit: cover;">
+                                        @if($photo->is_cover)
+                                            <span class="badge bg-success position-absolute top-0 start-0 m-1">غلاف</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-muted">لا توجد صور لهذه الشقة</p>
+                    @endif
+                    <div class="mt-3">
+                        <a href="{{ route('admin.apartments.photos.index', $apartment->id) }}" class="btn btn-primary">
+                            <i class="fas fa-images"></i> إدارة الصور
+                        </a>
+                    </div>
+                </div>
+            </div>
+
             <div class="row mt-3">
                 <div class="col-12">
                     <a href="{{ route('admin.apartments.edit', $apartment->id) }}" class="btn btn-primary">تعديل</a>

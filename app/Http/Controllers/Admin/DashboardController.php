@@ -99,41 +99,49 @@ class DashboardController extends Controller
         $chartBookingsData = array_values($dailyBookings);
         $chartRevenueData = array_values($dailyRevenue);
 
+        // التأكد من أن البيانات موجودة حتى لو كانت فارغة
+        if (empty($chartLabels)) {
+            $chartLabels = ['لا توجد بيانات'];
+            $chartBookingsData = [0];
+            $chartRevenueData = [0];
+        }
+
         // 📈 إحصائيات شهرية (آخر 12 شهر)
-        $monthsLabels = collect([]);
-        $usersMonthlyData = collect([]);
-        $apartmentsMonthlyData = collect([]);
-        $bookingsMonthlyData = collect([]);
-        $revenueMonthlyData = collect([]);
+        $monthsLabels = [];
+        $usersMonthlyData = [];
+        $apartmentsMonthlyData = [];
+        $bookingsMonthlyData = [];
+        $revenueMonthlyData = [];
 
         for ($i = 11; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i)->format('Y-m');
-            $monthsLabels->push(Carbon::now()->subMonths($i)->translatedFormat('M Y'));
+            $monthsLabels[] = Carbon::now()->subMonths($i)->translatedFormat('M Y');
 
-            $usersMonthlyData->push(
-                User::whereYear('created_at', substr($month, 0, 4))
-                    ->whereMonth('created_at', substr($month, 5, 2))
-                    ->count()
-            );
+            $usersMonthlyData[] = User::whereYear('created_at', substr($month, 0, 4))
+                ->whereMonth('created_at', substr($month, 5, 2))
+                ->count();
 
-            $apartmentsMonthlyData->push(
-                Apartment::whereYear('created_at', substr($month, 0, 4))
-                    ->whereMonth('created_at', substr($month, 5, 2))
-                    ->count()
-            );
+            $apartmentsMonthlyData[] = Apartment::whereYear('created_at', substr($month, 0, 4))
+                ->whereMonth('created_at', substr($month, 5, 2))
+                ->count();
 
-            $bookingsMonthlyData->push(
-                Booking::whereYear('created_at', substr($month, 0, 4))
-                    ->whereMonth('created_at', substr($month, 5, 2))
-                    ->count()
-            );
+            $bookingsMonthlyData[] = Booking::whereYear('created_at', substr($month, 0, 4))
+                ->whereMonth('created_at', substr($month, 5, 2))
+                ->count();
 
-            $revenueMonthlyData->push(
-                Booking::where('status', 'COMPLETED')
-                    ->whereYear('created_at', substr($month, 0, 4))
-                    ->whereMonth('created_at', substr($month, 5, 2))
-                    ->sum('total_price')
-            );
+            $revenueMonthlyData[] = Booking::where('status', 'COMPLETED')
+                ->whereYear('created_at', substr($month, 0, 4))
+                ->whereMonth('created_at', substr($month, 5, 2))
+                ->sum('total_price');
+        }
+
+        // التأكد من أن البيانات موجودة حتى لو كانت فارغة
+        if (empty($monthsLabels)) {
+            $monthsLabels = ['لا توجد بيانات'];
+            $usersMonthlyData = [0];
+            $apartmentsMonthlyData = [0];
+            $bookingsMonthlyData = [0];
+            $revenueMonthlyData = [0];
         }
 
         // 🏆 أفضل الشقق (حسب التقييم)

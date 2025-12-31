@@ -119,7 +119,7 @@ class ApartmentController extends Controller
      */
     public function show(Apartment $apartment)
     {
-        $apartment->load(['owner', 'bookings.renter', 'reviews.user']);
+        $apartment->load(['owner', 'bookings.renter', 'reviews.user', 'photos']);
         
         return view('admin.apartments.show', compact('apartment'));
     }

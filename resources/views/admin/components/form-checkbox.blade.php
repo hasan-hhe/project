@@ -30,7 +30,7 @@
                                         width="50px">
                                 @else
                                     {{ $item->$attr }}@if (isset($attr1))
-                                        - {{ $item->$attr1->$attr2 }}
+                                        - {{ isset($attr2) ? $item->$attr1->$attr2 : $item->$attr1 }}
                                     @endif
                                 @endif
                             </label>

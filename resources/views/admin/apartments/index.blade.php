@@ -134,6 +134,15 @@
                                                         [
                                                             'type' => 'href',
                                                             'url' => route(
+                                                                'admin.apartments.photos.index',
+                                                                $apartment->id),
+                                                            'icon' => 'fa-images',
+                                                            'text' => 'الصور',
+                                                            'class' => 'text-primary',
+                                                        ],
+                                                        [
+                                                            'type' => 'href',
+                                                            'url' => route(
                                                                 'admin.apartments.edit',
                                                                 $apartment->id),
                                                             'icon' => 'fa-edit',

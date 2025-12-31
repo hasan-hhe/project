@@ -70,6 +70,12 @@
                         <p>الحجوزات</p>
                     </a>
                 </li>
+                <li class="nav-item {{ Request::is('admin/reviews*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.reviews.index') }}">
+                        <i class="fas fa-star"></i>
+                        <p>التقييمات</p>
+                    </a>
+                </li>
                 <li class="nav-item {{ Request::is('admin/apartment-owners*') ? 'active' : '' }}">
                     <a href="{{ route('admin.apartment-owners.index') }}">
                         <i class="fas fa-user-tie"></i>

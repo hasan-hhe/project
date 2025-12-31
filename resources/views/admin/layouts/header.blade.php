@@ -48,6 +48,47 @@
                     </ul>
                 </li>
 
+                <!-- Notifications -->
+                <li class="nav-item topbar-icon dropdown hidden-caret">
+                    <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-bell"></i>
+                        <span class="notification">{{ count($notificationsNav) }}</span>
+                    </a>
+                    <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                        <li>
+                            <div class="dropdown-title d-flex justify-content-between align-items-center">
+                                الإشعارات <br>
+                                <a href="{{ route('admin.notifications.mark-all') }}" class="small">رؤية الكل</a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="notif-scroll scrollbar-outer">
+                                <div class="notif-center" id="notifications">
+                                    @foreach ($notificationsNav as $notification)
+                                        <a href="{{ route('admin.notifications.edit', $notification->id) }}">
+                                            <div class="notif-icon notif-primary">
+                                                <i class="fa fa-user" style="padding: 15px;"></i>
+                                            </div>
+                                            <div class="notif-content">
+                                                <span class="block">{{ $notification->title }}</span>
+                                                <span class="block">{{ $notification->body }}</span>
+                                                <span
+                                                    class="time">{{ $notification->created_at->format('h:i:s') }}</span>
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <a class="see-all" href="{{ route('admin.notifications.index') }}">رؤية كل الإشعارات<i
+                                    class="fa fa-angle-left"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
 
                 <!-- Profile -->
                 <li class="nav-item topbar-user dropdown hidden-caret">

@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ModificationRequestController;
 use App\Http\Controllers\Admin\PendingApprovalController;
 use App\Http\Controllers\Admin\WalletController;
+use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\Admin\ApartmentPhotoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -108,4 +110,17 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::get('/wallet/{user}', [WalletController::class, 'show'])->name('wallet.show');
     Route::post('/wallet/{user}/recharge', [WalletController::class, 'recharge'])->name('wallet.recharge');
+
+    // Reviews Routes
+    Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::get('/reviews/{review}', [ReviewController::class, 'show'])->name('reviews.show');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::post('/reviews/destroy-check', [ReviewController::class, 'destroyCheck'])->name('reviews.destroy-check');
+
+    // Apartment Photos Routes
+    Route::get('/apartments/{apartment}/photos', [ApartmentPhotoController::class, 'index'])->name('apartments.photos.index');
+    Route::post('/apartments/{apartment}/photos', [ApartmentPhotoController::class, 'store'])->name('apartments.photos.store');
+    Route::patch('/apartments/{apartment}/photos/{photo}', [ApartmentPhotoController::class, 'update'])->name('apartments.photos.update');
+    Route::post('/apartments/{apartment}/photos/{photo}/set-cover', [ApartmentPhotoController::class, 'setCover'])->name('apartments.photos.set-cover');
+    Route::delete('/apartments/{apartment}/photos/{photo}', [ApartmentPhotoController::class, 'destroy'])->name('apartments.photos.destroy');
 });
