@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('content');
             $table->string('attachment_url')->nullable();
             $table->timestamp('read_at')->nullable();
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
 

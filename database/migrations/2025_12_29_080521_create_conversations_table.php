@@ -13,8 +13,7 @@ return new class extends Migration
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('renter_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('apartment_id')->constrained()->onDelete('cascade');
-            $table->unsignedBigInteger('ably_channel_id');
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
 

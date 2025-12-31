@@ -1,0 +1,173 @@
+@extends('admin.layouts.master')
+@section('title', 'إضافة مستخدم')
+@section('main-content')
+    <div class="container">
+        <div class="page-inner">
+            @include('admin.components.page-header', [
+                'title' => 'إضافة مستخدم',
+                'arr' => [
+                    ['title' => 'المستخدمون', 'link' => route('admin.users.index')],
+                    ['title' => 'إضافة مستخدم', 'link' => route('admin.users.create')],
+                ],
+            ])
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">إضافة مستخدم جديد</h4>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @include('admin.components.input', [
+                                        'type' => 'text',
+                                        'name' => 'first_name',
+                                        'id' => 'first_name',
+                                        'label' => 'الاسم الأول',
+                                        'value' => old('first_name'),
+                                        'required' => true,
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    @include('admin.components.input', [
+                                        'type' => 'text',
+                                        'name' => 'last_name',
+                                        'id' => 'last_name',
+                                        'label' => 'الاسم الأخير',
+                                        'value' => old('last_name'),
+                                        'required' => true,
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    @include('admin.components.input', [
+                                        'type' => 'text',
+                                        'name' => 'phone_number',
+                                        'id' => 'phone_number',
+                                        'label' => 'رقم الهاتف',
+                                        'value' => old('phone_number'),
+                                        'required' => true,
+                                        'attribute' => 'oninput=validateNumber(this)',
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    @include('admin.components.input', [
+                                        'type' => 'email',
+                                        'name' => 'email',
+                                        'id' => 'email',
+                                        'label' => 'البريد الإلكتروني',
+                                        'value' => old('email'),
+                                        'required' => false,
+                                    ])
+                                </div>
+
+                                <div class="col-12">
+                                    @include('admin.components.input', [
+                                        'type' => 'date',
+                                        'name' => 'date_of_birth',
+                                        'id' => 'date_of_birth',
+                                        'label' => 'تاريخ الميلاد',
+                                        'value' => old('date_of_birth'),
+                                        'required' => false,
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    @include('admin.components.select', [
+                                        'selectedId' => 'account_type',
+                                        'label' => 'نوع الحساب',
+                                        'items' => collect($accountTypes)->map(function ($label, $value) {
+                                                return (object) ['value' => $value, 'label' => $label];
+                                            })->values(),
+                                        'name' => 'label',
+                                        'attr' => 'value',
+                                        'valueSelected' => old('account_type'),
+                                        'nameForm' => 'account_type',
+                                        'required' => true,
+                                    ])
+                                </div>
+
+                                <div class="col-md-6" id="status_section" style="display: none;">
+                                    @include('admin.components.select', [
+                                        'selectedId' => 'status',
+                                        'label' => 'حالة صاحب الشقة',
+                                        'items' => collect($ownerStatuses)->map(function ($label, $value) {
+                                                return (object) ['value' => $value, 'label' => $label];
+                                            })->values(),
+                                        'name' => 'label',
+                                        'attr' => 'value',
+                                        'valueSelected' => old('status', 'PENDING'),
+                                        'nameForm' => 'status',
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    @include('admin.components.input', [
+                                        'type' => 'password',
+                                        'name' => 'password',
+                                        'id' => 'password',
+                                        'label' => 'كلمة المرور',
+                                        'required' => true,
+                                        'value' => old('password'),
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    <span class="ms-4">الصورة الشخصية (اختياري)</span>
+                                    @include('admin.components.input', [
+                                        'type' => 'file',
+                                        'name' => 'avatar_image',
+                                        'value' => old('avatar_image'),
+                                        'id' => 'avatar_image',
+                                        'label' => 'صورة الشخصية (اختياري)',
+                                        'required' => false,
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    <span class="ms-4">صورة الهوية (اختياري)</span>
+                                    @include('admin.components.input', [
+                                        'type' => 'file',
+                                        'name' => 'identity_document_image',
+                                        'value' => old('identity_document_image'),
+                                        'id' => 'identity_document_image',
+                                        'label' => 'صورة الهوية (اختياري)',
+                                        'required' => false,
+                                    ])
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <button class="btn btn-primary" type="submit">إضافة المستخدم</button>
+                                        <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">إلغاء</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@push('scripts')
+    <script>
+        const accountTypeSelect = document.getElementById('account_type');
+        const statusSection = document.getElementById('status_section');
+
+        function toggleOwnerStatus() {
+            if (accountTypeSelect.value === 'OWNER') {
+                statusSection.style.display = 'block';
+            } else {
+                statusSection.style.display = 'none';
+            }
+        }
+
+        accountTypeSelect.addEventListener('change', toggleOwnerStatus);
+        toggleOwnerStatus(); // تشغيل عند تحميل الصفحة
+    </script>
+@endpush

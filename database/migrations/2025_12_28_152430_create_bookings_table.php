@@ -14,10 +14,10 @@ return new class extends Migration
             $table->foreignId('apartment_id')->constrained()->onDelete('cascade');
             $table->date('start_date');
             $table->date('end_date');
-            $table->decimal('total_price');
-            $table->string('cancel_reason');
+            $table->decimal('total_price', 12, 2);
+            $table->string('cancel_reason')->nullable();
             $table->enum('status', ['PENDING', 'CONFIRMED', 'CANCLED', 'COMPLETED'])->default('PENDING');
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
     public function down(): void

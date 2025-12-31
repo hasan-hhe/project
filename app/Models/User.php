@@ -23,6 +23,7 @@ class User extends Authenticatable
         'avatar_url',
         'identity_docomunt_url',
         'password',
+        'wallet_balance',
     ];
 
     protected $hidden = [
@@ -36,17 +37,48 @@ class User extends Authenticatable
             'date_of_birth' => 'date',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'wallet_balance' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     *
+     * @return string
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'id';
+    }
+
+    /**
+     * Get the unique identifier for the user.
+     *
+     * @return mixed
+     */
+    public function getAuthIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Get the password for the user.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->password;
     }
 
     public function appartments()
     {
-        return $this->hasMany(Apartment::class);
+        return $this->hasMany(Apartment::class, 'owner_id');
     }
 
     public function bookings()
     {
-        return $this->hasMany(Booking::class);
+        return $this->hasMany(Booking::class, 'renter_id');
     }
 
     public function ownerConservations()

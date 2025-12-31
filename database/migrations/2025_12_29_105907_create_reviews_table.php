@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('booking_id')->constrained()->onDelete('cascade');
             $table->integer('rating');
             $table->text('comment')->nullable();
-            $table->timestamps();
+            $table->timestampsTz();
         });
     }
 

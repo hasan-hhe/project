@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Conservation extends Model
 {
+    protected $fillable = [
+        'ably_channel_id'
+    ];
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
