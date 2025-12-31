@@ -21,7 +21,7 @@ class User extends Authenticatable
         'account_type',
         'email',
         'avatar_url',
-        'identity_docomunt_url',
+        'identity_document_url',
         'password',
         'wallet_balance',
     ];
