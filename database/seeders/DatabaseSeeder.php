@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Apartment;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -12,12 +11,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-        Apartment::factory(5)->create();
-        // User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
-
+        // Run all seeders needed to fully populate the database
+        $this->call([
+            UserSeeder::class,
+            GovernorateSeeder::class,
+            CitySeeder::class,
+            ApartmentSeeder::class,
+            BookingSeeder::class,
+            ReviewSeeder::class,
+        ]);
     }
 }
