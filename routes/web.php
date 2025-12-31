@@ -25,7 +25,6 @@ Route::get('/', function () {
 });
 
 Route::get('/apartments', ApartmentController::class . '@index')->name('getApar');
-Route::get('/apartments/favorites', ApartmentController::class . '@getFavoriteApartments')->name('getFavoriteApar');
 Route::get('/apartments/{id}', ApartmentController::class . '@show')->name('getAparById');
 // Route::get('/checkuser', [Controller1::class, "checkuser"]);
 // Route::get('/getalluser', [Controller1::class, "getalluser"]);
