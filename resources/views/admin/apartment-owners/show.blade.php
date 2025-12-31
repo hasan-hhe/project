@@ -103,13 +103,13 @@
                     </div>
                     @endif
 
-                    @if($owner->identity_docomunt_url)
+                    @if($owner->identity_document_url)
                     <div class="card mb-4">
                         <div class="card-header">
                             <h4 class="card-title">صورة الهوية</h4>
                         </div>
                         <div class="card-body text-center">
-                            <img src="{{ asset($owner->identity_docomunt_url) }}" alt="صورة الهوية" class="img-fluid" style="max-height: 200px;">
+                            <img src="{{ asset($owner->identity_document_url) }}" alt="صورة الهوية" class="img-fluid" style="max-height: 200px;">
                         </div>
                     </div>
                     @endif

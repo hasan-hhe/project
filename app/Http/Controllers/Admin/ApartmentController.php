@@ -37,14 +37,14 @@ class ApartmentController extends Controller
         // Search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('address_line', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('address_line', 'like', "%{$search}%");
             });
         }
 
-        $apartments = $query->paginate(defined('paginateNumber') ? paginateNumber : 10)
+        $apartments = $query->paginate(defined('paginateNumber') ? constant('paginateNumber') : 10)
             ->withQueryString();
 
         $owners = User::where('account_type', 'OWNER')->get();
@@ -120,7 +120,7 @@ class ApartmentController extends Controller
     public function show(Apartment $apartment)
     {
         $apartment->load(['owner', 'bookings.renter', 'reviews.user', 'photos']);
-        
+
         return view('admin.apartments.show', compact('apartment'));
     }
 
@@ -277,4 +277,3 @@ class ApartmentController extends Controller
         }
     }
 }
-

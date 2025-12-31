@@ -30,7 +30,7 @@ class StoreUserRequest extends FormRequest
             'account_type' => 'required|in:RENTER,OWNER,ADMIN',
             'password' => 'required|string|min:6',
             'avatar_url' => 'nullable|string',
-            'identity_docomunt_url' => 'nullable|string',
+            'identity_document_url' => 'nullable|string',
             'status' => 'nullable|in:PENDING,APPROVED,REJECTED',
         ];
     }
@@ -57,4 +57,3 @@ class StoreUserRequest extends FormRequest
         ];
     }
 }
-

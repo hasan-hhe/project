@@ -21,7 +21,7 @@ class UserController extends Controller
     public function index()
     {
         $type = request('type', 'renter');
-        $paginateNumber = defined('paginateNumber') ? paginateNumber : 10;
+        $paginateNumber = defined('paginateNumber') ? constant('paginateNumber') : 10;
 
         $query = User::orderBy('id', 'DESC');
 
@@ -88,7 +88,7 @@ class UserController extends Controller
                 'account_type' => $request->account_type,
                 'password' => Hash::make($request->password),
                 'avatar_url' => $avatarUrl,
-                'identity_docomunt_url' => $identityDocumentUrl,
+                'identity_document_url' => $identityDocumentUrl,
                 'status' => $request->account_type == 'OWNER'
                     ? ($request->status ?? 'PENDING')
                     : null,
@@ -178,10 +178,10 @@ class UserController extends Controller
 
             if ($request->hasFile('identity_document_image')) {
                 // حذف الصورة القديمة إن وجدت
-                if ($user->identity_docomunt_url && Storage::disk('public')->exists($user->identity_docomunt_url)) {
-                    Storage::disk('public')->delete($user->identity_docomunt_url);
+                if ($user->identity_document_url && Storage::disk('public')->exists($user->identity_document_url)) {
+                    Storage::disk('public')->delete($user->identity_document_url);
                 }
-                $updateData['identity_docomunt_url'] = $request->file('identity_document_image')->store('images/users/identity', 'public');
+                $updateData['identity_document_url'] = $request->file('identity_document_image')->store('images/users/identity', 'public');
             }
 
             if ($request->filled('password')) {

@@ -141,9 +141,9 @@
 
                                 <div class="col-md-6">
                                     <span class="ms-4">صورة الهوية (اختياري)</span>
-                                    @if ($user->identity_docomunt_url)
+                                    @if ($user->identity_document_url)
                                         <div class="mb-2">
-                                            <img src="{{ asset($user->identity_docomunt_url) }}" alt="صورة الهوية الحالية"
+                                            <img src="{{ asset($user->identity_document_url) }}" alt="صورة الهوية الحالية"
                                                 style="max-height: 100px;">
                                         </div>
                                     @endif

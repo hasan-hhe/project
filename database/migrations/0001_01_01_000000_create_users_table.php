@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('phone_number')->unique();
             $table->string('avatar_url')->nullable();
             $table->string('identity_document_url')->nullable();
-            $table->enum('account_type', ['RENTER', 'OWNER', 'ADMIN']);
+            $table->enum('account_type', ['RENTER', 'OWNER', 'ADMIN'])->defualt('RENTER')->nullable();
             $table->enum('status', ['REJECTED', 'APPROVED', 'PENDING'])->default('PENDING');
             $table->timestamp('email_verified_at')->nullable();
             $table->date('date_of_birth')->nullable();

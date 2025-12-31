@@ -46,7 +46,7 @@ class SignupController extends Controller
                 'account_type' => $request->account_type,
                 'email' => $request->email,
                 'avatar_url' => $avatar,
-                'identity_docomunt_url' => $identity_document,
+                'identity_document_url' => $identity_document,
                 'password' => Hash::make($request->password)
             ]);
         } catch (Exception $e) {
