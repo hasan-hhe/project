@@ -13,4 +13,9 @@ class City extends Model
     {
         return $this->belongsTo(Governorate::class, 'governorate_id');
     }
+
+    public function apatments()
+    {
+        return $this->hasMany(Apartment::class);
+    }
 }

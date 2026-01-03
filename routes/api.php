@@ -13,8 +13,10 @@ Route::prefix("auth")->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
-    Route::get('/my-profile', [ProfileController::class, 'getUserInformation']);
+    Route::get('/my-profile', [ProfileController::class, 'show']);
     Route::post('/logout', [SignupController::class, 'logout']);
-    Route::get('/apartments/favorites', [ApartmentController::class, 'getFavoriteApartments'])
-        ->name('getFavoriteApar');
+    Route::get('/apartments/favorites', [ApartmentController::class, 'getFavoriteApartments'])->name('getFavoriteApar');
+    Route::get('/avatar-image', [ProfileController::class, 'getAvatar']);
+    Route::get('/identity-document-image', [ProfileController::class, 'getIdentityDocument']);
+    Route::put('/update-profile-info', [ProfileController::class, 'update']);
 });

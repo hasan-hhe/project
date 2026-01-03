@@ -21,7 +21,7 @@ class SignupController extends Controller
                 'last_name' => 'required|string',
                 'phone_number' => 'required|string|unique:users|regex:/^[0-9]+$/',
                 'date_of_birth' => 'nullable|date',
-                'account_type' => 'nullable|in:tenant,apartment_owner',
+                'account_type' => 'nullable|in:RENTER,OWNER',
                 'email' => 'nullable|string|email|unique:users',
                 'password' => 'required|min:6'
             ]);
@@ -33,9 +33,9 @@ class SignupController extends Controller
 
         $avatar = null;
         if ($request->hasFile('avatar_image'))
-            $avatar = $request->file('avatar_image')->store('images', 'public');
+            $avatar = $request->file('avatar_image')->store('avatars', 'public');
 
-        $identity_document = $request->file('identity_document_image')->store('images', 'public');
+        $identity_document = $request->file('identity_document_image')->store('identity_documents', 'public');
 
         try {
             $user = User::create([
