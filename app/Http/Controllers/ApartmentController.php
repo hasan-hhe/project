@@ -2,47 +2,61 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Http\Resources\ApartmentResource;
+use App\Http\Requests\IndexApartmentRequest;
 use App\Models\Apartment;
 use Illuminate\Http\Request;
 
 class ApartmentController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexApartmentRequest $request)
     {
+        $data = $request->validated();
         $query = Apartment::query();
 
-        if ($request->has('city_id') && !empty($request->city_id)) {
-            $query->where('city_id', $request->city_id);
+        if (!empty($data['city_id'] ?? null)) {
+            $query->where('city_id', $data['city_id']);
         }
 
-        if ($request->has('governorate_id') && !empty($request->governorate_id)) {
-            $query->where('governorate_id', $request->governorate_id);
+        if (!empty($data['governorate_id'] ?? null)) {
+            $query->where('governorate_id', $data['governorate_id']);
         }
 
-        if ($request->has('min_price') && !empty($request->min_price)) {
-            $query->where('price', '>=', $request->min_price);
+        if (!empty($data['min_price'] ?? null)) {
+            $query->where('price', '>=', $data['min_price']);
         }
-        if ($request->has('max_price') && !empty($request->max_price)) {
-            $query->where('price', '<=', $request->max_price);
+        if (!empty($data['max_price'] ?? null)) {
+            $query->where('price', '<=', $data['max_price']);
         }
 
-        $Apartments = $query->paginate(10);
-        $Apartments = ApartmentResource::collection($Apartments);
-        return response()->json($Apartments);
+        $sortBy = $data['sort_by'] ?? 'created_at';
+        $sortDir = $data['sort_dir'] ?? 'desc';
+        $query->orderBy($sortBy, $sortDir);
+
+        $perPage = min(max((int)($data['per_page'] ?? 10), 1), 50);
+        $apartments = $query->paginate($perPage);
+
+        return ResponseHelper::success(ApartmentResource::collection($apartments), 'Apartments retrieved successfully.');
     }
 
     public function show($id)
     {
         $apartment = Apartment::findOrFail($id);
-        $apartment = new ApartmentResource($apartment);
-        return response()->json($apartment);
+        return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
     }
     public function getFavoriteApartments(Request $request)
     {
-        $request->auth()->user();
-        $favoriteApartments = Apartment::where('is_favorite', true)->get();
-        $favoriteApartments = ApartmentResource::collection($favoriteApartments);
-        return response()->json($favoriteApartments);
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
+        $favoriteApartments = Apartment::where('is_favorite', true)
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+
+        return ApartmentResource::collection($favoriteApartments);
     }   
 }

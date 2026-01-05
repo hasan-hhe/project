@@ -12,6 +12,10 @@ Route::prefix("auth")->group(function () {
     Route::post('/login', [SignupController::class, "login"]);
 });
 
+// Public Apartments API
+Route::get('/apartments', [ApartmentController::class, 'index'])->name('getApar');
+Route::get('/apartments/{id}', [ApartmentController::class, 'show'])->name('getAparById');
+
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/my-profile', [ProfileController::class, 'show']);
     Route::post('/logout', [SignupController::class, 'logout']);
