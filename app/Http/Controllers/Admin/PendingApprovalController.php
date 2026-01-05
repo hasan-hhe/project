@@ -29,7 +29,7 @@ class PendingApprovalController extends Controller
             });
         }
 
-        $users = $query->paginate(defined('paginateNumber') ? paginateNumber : 10)
+        $users = $query->paginate(defined('paginateNumber') ? constant('paginateNumber') : 10)
             ->withQueryString();
 
         return view('admin.pending-approvals.index', compact('users'));

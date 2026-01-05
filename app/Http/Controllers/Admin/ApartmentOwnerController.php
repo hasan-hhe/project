@@ -25,18 +25,18 @@ class ApartmentOwnerController extends Controller
         // Search by name, phone, or email
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('phone_number', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
         $owners = $query->orderBy('id', 'DESC')
-            ->paginate(defined('paginateNumber') ? paginateNumber : 10)
+            ->paginate(defined('paginateNumber') ? constant('paginateNumber') : 10)
             ->withQueryString();
-        
+
         return view('admin.apartment-owners.index', compact('owners'));
     }
 
@@ -50,7 +50,7 @@ class ApartmentOwnerController extends Controller
         }
 
         $apartments = $owner->appartments()->get();
-        
+
         return view('admin.apartment-owners.show', compact('owner', 'apartments'));
     }
 

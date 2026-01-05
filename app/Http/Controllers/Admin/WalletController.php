@@ -20,15 +20,15 @@ class WalletController extends Controller
         // Search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('phone_number', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        $users = $query->paginate(defined('paginateNumber') ? paginateNumber : 10)
+        $users = $query->paginate(defined('paginateNumber') ? constant('paginateNumber') : 10)
             ->withQueryString();
 
         return view('admin.wallet.index', compact('users'));

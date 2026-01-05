@@ -1,10 +1,5 @@
 <?php
 
-use App\Http\Controllers\Controller1;
-use App\Http\Controllers\Controller2;
-use App\Http\Controllers\Controller3;
-use App\Http\Controllers\SignupController;
-use App\Http\Middleware\checktoken;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\Admin\ApartmentOwnerController;
@@ -26,13 +21,6 @@ Route::get('/', function () {
 
 Route::get('/apartments', ApartmentController::class . '@index')->name('getApar');
 Route::get('/apartments/{id}', ApartmentController::class . '@show')->name('getAparById');
-// Route::get('/checkuser', [Controller1::class, "checkuser"]);
-// Route::get('/getalluser', [Controller1::class, "getalluser"]);
-// Route::get('/getallproduct', [Controller1::class, "getallproduct"]);
-// Route::post('/update_name', [Controller1::class, "update_name"]);
-// Route::delete('/deleteproduct/{id}', [Controller1::class, "deleteproduct"]);
-// Route::post('/products', [Controller1::class, "create"]);
-// Route::post('/test', [Controller1::class, "test"]);
 
 Route::get('/', function () {
     return redirect()->route('admin.auth.login');
