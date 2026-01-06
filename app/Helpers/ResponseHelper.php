@@ -17,7 +17,6 @@ class ResponseHelper
     {
         return response()->json([
             'message' => 'error',
-            'data'    => null,
             'body'    => $message,
         ], $statusCode);
     }

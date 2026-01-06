@@ -17,7 +17,7 @@ class SignupController extends Controller
             $request->validate([
                 'first_name' => 'required|string',
                 'avatar_image' => 'nullable|image|mimes:png,jpg,gif',
-                'identity_document_image' => 'required|image|mimes:png,jpg,gif',
+                // 'identity_document_image' => 'required|image|mimes:png,jpg,gif',
                 'last_name' => 'required|string',
                 'phone_number' => 'required|string|unique:users|regex:/^[0-9]+$/',
                 'date_of_birth' => 'nullable|date',
@@ -27,7 +27,8 @@ class SignupController extends Controller
             ]);
         } catch (Exception $e) {
             return response()->json([
-                'message' => $e->getMessage()
+                'message' => 'error',
+                'body' => $e->getMessage()
             ]);
         }
 
@@ -35,7 +36,7 @@ class SignupController extends Controller
         if ($request->hasFile('avatar_image'))
             $avatar = $request->file('avatar_image')->store('avatars', 'public');
 
-        $identity_document = $request->file('identity_document_image')->store('identity_documents', 'public');
+        // $identity_document = $request->file('identity_document_image')->store('identity_documents', 'public');
 
         try {
             $user = User::create([
@@ -46,7 +47,7 @@ class SignupController extends Controller
                 'account_type' => $request->account_type,
                 'email' => $request->email,
                 'avatar_url' => $avatar,
-                'identity_document_url' => $identity_document,
+                // 'identity_document_url' => $identity_document,
                 'password' => Hash::make($request->password)
             ]);
         } catch (Exception $e) {
@@ -57,9 +58,10 @@ class SignupController extends Controller
 
 
         return response()->json([
-            'message' => 'register done!',
+            'message' => 'success',
             'user'    => new UserRecource($user),
-            'token'   => $token
+            'token'   => $token,
+            'body' => 'تم تسجيل الدخول بنجاح'
         ]);
     }
 
