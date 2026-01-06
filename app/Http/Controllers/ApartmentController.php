@@ -45,13 +45,9 @@ class ApartmentController extends Controller
         $apartment = Apartment::findOrFail($id);
         return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
     }
+
     public function getFavoriteApartments(Request $request)
     {
-        $request->auth()->user();
-        $favoriteApartments = Apartment::where('is_favorite', true)->get();
-        $favoriteApartments = ApartmentResource::collection($favoriteApartments);
-        return response()->json($favoriteApartments);
-    }
         $user = $request->user();
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -63,5 +59,5 @@ class ApartmentController extends Controller
             ->paginate($perPage);
 
         return ApartmentResource::collection($favoriteApartments);
-    }   
+    }
 }
