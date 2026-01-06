@@ -42,7 +42,7 @@ class profileController extends Controller
         ]);
     }
 
-    public function getIdentityDoucument(Request $request)
+    public function getIdentityDocument(Request $request)
     {
         $user = $request->user();
         return response()->json([
@@ -59,7 +59,7 @@ class profileController extends Controller
                 'avatar_image' => 'nullable|image|mimes:png,jpg,gif',
                 'identity_document_image' => 'required|image|mimes:png,jpg,gif',
                 'last_name' => 'required|string',
-                'phone_number' => 'required|string|unique:users|regex:/^[0-9]+$/',
+                'phone_number' => 'required|string|regex:/^[0-9]+$/',
                 'date_of_birth' => 'nullable|date',
                 'account_type' => 'nullable|in:tenant,apartment_owner',
                 'email' => 'nullable|string|email|unique:users',
@@ -67,23 +67,22 @@ class profileController extends Controller
             ]);
 
             DB::beginTransaction();
-
             $avatar = $user->avatar_url;
             if ($request->hasFile('avatar_image')) {
-                if (!$avatar)
-                    Storage::delete('public/avatars/' . $user->identity_doucument);
+                if (Storage::disk('public')->exists($avatar))
+                    Storage::disk('public')->delete($avatar);
                 $avatar = $request->file('avatar_image')->store('avatars', 'public');
             }
 
-            Storage::delete('public/identity_documents/' . $user->identity_doucument);
+            Storage::disk('public')->delete($user->identity_document_url);
             $identity_document = $request->file('identity_document_image')->store('identity_documents', 'public');
 
             $user->update([
-                'first_name' => $request->firstname,
+                'first_name' => $request->first_name,
                 'avatar_url' => $avatar,
                 'identity_document_url' => $identity_document,
-                'last_name' => $request->lastname,
-                'phone_number' => $request->phonenumber,
+                'last_name' => $request->last_name,
+                'phone_number' => $request->phone_number,
                 'date_of_birth' => $request->date_of_birth,
                 'account_type' => $request->account_type,
                 'email' => $request->email,

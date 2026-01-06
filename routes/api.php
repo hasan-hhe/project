@@ -22,5 +22,5 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/apartments/favorites', [ApartmentController::class, 'getFavoriteApartments'])->name('getFavoriteApar');
     Route::get('/avatar-image', [ProfileController::class, 'getAvatar']);
     Route::get('/identity-document-image', [ProfileController::class, 'getIdentityDocument']);
-    Route::put('/update-profile-info', [ProfileController::class, 'update']);
+    Route::post('/update-profile-info', [ProfileController::class, 'update']);
 });

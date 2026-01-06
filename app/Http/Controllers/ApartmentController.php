@@ -47,6 +47,11 @@ class ApartmentController extends Controller
     }
     public function getFavoriteApartments(Request $request)
     {
+        $request->auth()->user();
+        $favoriteApartments = Apartment::where('is_favorite', true)->get();
+        $favoriteApartments = ApartmentResource::collection($favoriteApartments);
+        return response()->json($favoriteApartments);
+    }
         $user = $request->user();
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);

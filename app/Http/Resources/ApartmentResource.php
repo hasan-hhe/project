@@ -15,7 +15,7 @@ class ApartmentResource extends JsonResource
                 'id' => $this->id,
                 'name' => $this->title,
                 // 'description' => $this->description,
-                'price_per_night' => $this->price,
+                'price_per_month' => $this->price,
                 // 'available' => $this->is_active,
             ];
         }
@@ -23,7 +23,7 @@ class ApartmentResource extends JsonResource
             return [
                 'name' => $this->title,
                 'description' => $this->description,
-                'price_per_night' => $this->price,
+                'price_per_month' => $this->price,
                 'rating' => $this->rating_avg,
                 'photosURL' => $this->photosURL,
             ];
@@ -33,8 +33,8 @@ class ApartmentResource extends JsonResource
             return [
                 'id' => $this->id,
                 'name' => $this->title,
-                'price_per_night' => $this->price,
-                'photosURL' => $this->photosURL,
+                'price_per_month' => $this->price,
+                'photosURL' => $this->photosURL
             ];
         }
 

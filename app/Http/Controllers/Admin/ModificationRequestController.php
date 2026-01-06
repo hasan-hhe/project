@@ -27,14 +27,14 @@ class ModificationRequestController extends Controller
         // Search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->whereHas('requestedBy', function($q) use ($search) {
+            $query->whereHas('requestedBy', function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('phone_number', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%");
             });
         }
 
-        $requests = $query->paginate(defined('paginateNumber') ? paginateNumber : 10)
+        $requests = $query->paginate(defined('paginateNumber') ? constant('paginateNumber') : 10)
             ->withQueryString();
 
         return view('admin.modification-requests.index', compact('requests'));
@@ -46,7 +46,7 @@ class ModificationRequestController extends Controller
     public function show(BookingChange $modificationRequest)
     {
         $modificationRequest->load(['requestedBy', 'reviewer', 'booking']);
-        
+
         return view('admin.modification-requests.show', compact('modificationRequest'));
     }
 

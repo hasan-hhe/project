@@ -48,7 +48,7 @@ class ReviewController extends Controller
             });
         }
 
-        $reviews = $query->paginate(defined('paginateNumber') ? paginateNumber : 10)
+        $reviews = $query->paginate(defined('paginateNumber') ? constant('paginateNumber') : 10)
             ->withQueryString();
 
         $apartments = Apartment::all();
@@ -74,11 +74,11 @@ class ReviewController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             // Update apartment rating average
             $apartment = $review->apartment;
             $reviewsCount = $apartment->reviews()->count();
-            
+
             if ($reviewsCount > 1) {
                 $avgRating = $apartment->reviews()
                     ->where('id', '!=', $review->id)
@@ -89,7 +89,7 @@ class ReviewController extends Controller
                 $apartment->rating_avg = null;
                 $apartment->save();
             }
-            
+
             $review->delete();
             DB::commit();
 
@@ -127,7 +127,7 @@ class ReviewController extends Controller
                 // Update apartment rating average
                 $apartment = $review->apartment;
                 $reviewsCount = $apartment->reviews()->count();
-                
+
                 if ($reviewsCount > 1) {
                     $avgRating = $apartment->reviews()
                         ->where('id', '!=', $review->id)
@@ -155,4 +155,3 @@ class ReviewController extends Controller
         }
     }
 }
-

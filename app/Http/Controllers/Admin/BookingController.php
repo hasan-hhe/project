@@ -47,7 +47,7 @@ class BookingController extends Controller
             });
         }
 
-        $bookings = $query->paginate(defined('paginateNumber') ? paginateNumber : 10)
+        $bookings = $query->paginate(defined('paginateNumber') ? constant('paginateNumber') : 10)
             ->withQueryString();
 
         $renters = User::where('account_type', 'RENTER')->get();
