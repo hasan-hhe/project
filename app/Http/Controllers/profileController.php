@@ -38,7 +38,8 @@ class profileController extends Controller
                 'message' => 'no avatar, put your avatar!'
             ]);
         return response()->json([
-            'message' => $user->avatar_url
+            'message' => 'sucsses',
+            'avatar_url' => $user->avatar_url
         ]);
     }
 

@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Conservation extends Model
+class Conversation extends Model
 {
     protected $fillable = [
-        'ably_channel_id'
+        'renter_id',
+        'owner_id',
+        'apartment_id'
     ];
 
     public function owner()
@@ -23,6 +25,15 @@ class Conservation extends Model
     public function apartment()
     {
         return $this->belongsTo(Apartment::class);
+    }
+
+    public function laterMessage()
+    {
+        $messages = $this->messages;
+        $i = null;
+        foreach ($messages as $message)
+            $i = $message->content;
+        return $i;
     }
 
     public function messages()

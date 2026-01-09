@@ -33,9 +33,9 @@ class Apartment extends Model
                 return $this->hasMany(Booking::class, 'apartment_id');
         }
 
-        public function conservation()
+        public function Conversation()
         {
-                return $this->hasOne(Conservation::class);
+                return $this->hasOne(Conversation::class);
         }
 
         public function reviews()
@@ -46,5 +46,16 @@ class Apartment extends Model
         public function photos()
         {
                 return $this->hasMany(Photo::class);
+        }
+
+        public function cover()
+        {
+                $photos = $this->photos;
+                $url = null;
+                foreach ($photos as $photo) {
+                        if ($photo->is_cover)
+                                $url = $photo->url;
+                        return $url;
+                }
         }
 }

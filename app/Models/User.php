@@ -70,6 +70,10 @@ class User extends Authenticatable
     {
         return $this->password;
     }
+    
+    public function fullName(){
+        return $this->first_name.' '.$this->last_name;
+    }
 
     public function appartments()
     {
@@ -81,14 +85,14 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class, 'renter_id');
     }
 
-    public function ownerConservations()
+    public function ownerConversations()
     {
-        return $this->hasMany(Conservation::class, 'owner_id');
+        return $this->hasMany(Conversation::class, 'owner_id');
     }
 
-    public function renterConservations()
+    public function renterConversations()
     {
-        return $this->hasMany(Conservation::class, 'renter_id');
+        return $this->hasMany(Conversation::class, 'renter_id');
     }
 
     public function messages()

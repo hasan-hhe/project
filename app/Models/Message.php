@@ -8,6 +8,10 @@ class Message extends Model
 {
     protected $fillable = [
         'content',
+        'is_read',
+        'read_at',
+        'sender_id',
+        'conversation_id',
         'attachment_url',
     ];
 
@@ -23,8 +27,8 @@ class Message extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function conservation()
+    public function Conversation()
     {
-        return $this->belongsTo(Conservation::class);
+        return $this->belongsTo(Conversation::class);
     }
 }

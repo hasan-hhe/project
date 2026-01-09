@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserRecource extends JsonResource
+class MesssageResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,10 +15,11 @@ class UserRecource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $sender = User::findorFail($this->sender_id);
         return [
-            'id' => $this->id,
-            'name' => $this->fullName(),
-            // 'email'=> $this->email
+            'content' => $this->content,
+            'sender' => $sender->fullName(),
+            'attachment_url' => $this->attachment_url
         ];
     }
 }

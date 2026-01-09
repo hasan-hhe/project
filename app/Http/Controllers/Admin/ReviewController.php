@@ -56,7 +56,7 @@ class ReviewController extends Controller
 
         return view('admin.reviews.index', compact('reviews', 'apartments', 'users'));
     }
-
+    
     /**
      * Display the specified review.
      */
