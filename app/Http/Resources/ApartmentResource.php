@@ -20,12 +20,14 @@ class ApartmentResource extends JsonResource
             ];
         }
         if ($request->route()->getName() == 'getAparById') {
+            
+        $url = $this->apartment->cover();
             return [
                 'name' => $this->title,
                 'description' => $this->description,
                 'price_per_month' => $this->price,
                 'rating' => $this->rating_avg,
-                'photosURL' => $this->photosURL,
+                'photosURL' => $this->$url,
             ];
         }
 
