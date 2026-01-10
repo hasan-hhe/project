@@ -12,22 +12,37 @@ class ApartmentController extends Controller
 {
     public function index(IndexApartmentRequest $request)
     {
+        
         $data = $request->validated();
+
         $query = Apartment::query();
 
         if (!empty($data['city_id'] ?? null)) {
             $query->where('city_id', $data['city_id']);
+            $query->orderBy('price', 'asc');
         }
 
         if (!empty($data['governorate_id'] ?? null)) {
             $query->where('governorate_id', $data['governorate_id']);
+            $query->orderBy('price', 'asc');
         }
 
-        if (!empty($data['min_price'] ?? null)) {
-            $query->where('price', '>=', $data['min_price']);
-        }
-        if (!empty($data['max_price'] ?? null)) {
-            $query->where('price', '<=', $data['max_price']);
+        // Price filtering
+        // If both present, use a between
+        if (array_key_exists('min_price', $data) && $data['min_price'] !== null
+            && array_key_exists('max_price', $data) && $data['max_price'] !== null) {
+            $query->whereBetween('price', [(float)$data['min_price'], (float)$data['max_price']]);
+            $query->orderBy('price', 'asc');
+        } else {
+            if (array_key_exists('min_price', $data) && $data['min_price'] !== null) {
+                $query->where('price', '>=', (float)$data['min_price']);
+                $query->orderBy('price', 'asc');
+
+            }
+            if (array_key_exists('max_price', $data) && $data['max_price'] !== null) {
+                $query->where('price', '<=', (float)$data['max_price']);
+                $query->orderBy('price', 'asc');
+            }
         }
 
         $sortBy = $data['sort_by'] ?? 'created_at';
@@ -45,7 +60,6 @@ class ApartmentController extends Controller
         $apartment = Apartment::findOrFail($id);
         return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
     }
-
     public function getFavoriteApartments(Request $request)
     {
         $user = $request->user();
@@ -58,6 +72,6 @@ class ApartmentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ApartmentResource::collection($favoriteApartments);
-    }
+        return ResponseHelper::success(ApartmentResource::collection($favoriteApartments), 'Favorite apartments retrieved successfully.');
+    }   
 }

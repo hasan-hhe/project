@@ -14,7 +14,9 @@ Route::prefix("auth")->group(function () {
 
 // Public Apartments API
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('getApar');
-Route::get('/apartments/{id}', [ApartmentController::class, 'show'])->name('getAparById');
+Route::get('/apartments/{id}', [ApartmentController::class, 'show'])
+    ->whereNumber('id') 
+    ->name('getAparById');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
