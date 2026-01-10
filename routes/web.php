@@ -15,12 +15,13 @@ use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\ApartmentPhotoController;
 
+if (!defined('paginateNumber')) {
+    define('paginateNumber', 10);
+}
+
 Route::get('/', function () {
     return view('welcome');
 });
-
-Route::get('/apartments', ApartmentController::class . '@index')->name('getApar');
-Route::get('/apartments/{id}', ApartmentController::class . '@show')->name('getAparById');
 
 Route::get('/', function () {
     return redirect()->route('admin.auth.login');

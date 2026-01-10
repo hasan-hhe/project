@@ -7,12 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Message extends Model
 {
     protected $fillable = [
+        'conversation_id',
+        'sender_id',
         'content',
         'is_read',
         'read_at',
         'sender_id',
         'conversation_id',
         'attachment_url',
+        'read_at',
     ];
 
     protected function casts(): array
@@ -24,11 +27,11 @@ class Message extends Model
 
     public function sender()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'sender_id');
     }
 
     public function Conversation()
     {
-        return $this->belongsTo(Conversation::class);
+        return $this->belongsTo(Conversation::class, 'conversation_id');
     }
 }

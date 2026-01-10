@@ -48,14 +48,18 @@ class Apartment extends Model
                 return $this->hasMany(Photo::class);
         }
 
-        public function cover()
+        public function favorites()
         {
-                $photos = $this->photos;
-                $url = null;
-                foreach ($photos as $photo) {
-                        if ($photo->is_cover)
-                                $url = $photo->url;
-                        return $url;
-                }
+                return $this->hasMany(Favorite::class);
+        }
+
+        public function city()
+        {
+                return $this->belongsTo(City::class, 'city_id');
+        }
+
+        public function governorate()
+        {
+                return $this->belongsTo(Governorate::class, 'governorate_id');
         }
 }

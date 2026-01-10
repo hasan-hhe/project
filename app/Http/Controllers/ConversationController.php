@@ -2,302 +2,356 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ConversationResource;
-use App\Http\Resources\MesssageResource;
-use App\Models\Apartment;
+use App\Helpers\ResponseHelper;
+use App\Events\MessageSent;
 use App\Models\Conversation;
 use App\Models\Message;
-use Exception;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use OpenApi\Attributes as OA;
 
 class ConversationController extends Controller
 {
+    #[OA\Get(
+        path: "/conversations",
+        summary: "Get all conversations",
+        description: "Retrieve all conversations for the authenticated user",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", minimum: 1, maximum: 50, default: 10)),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Conversations retrieved successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Conversations retrieved successfully.")
+                    ]
+                )
+            ),
+        ]
+    )]
     public function index(Request $request)
     {
         $user = $request->user();
-
-        $conversations = Conversation::where('owner_id', $user->id)
-            ->orWhere('renter_id', $user->id)
-            ->with(['owner', 'renter', 'apartment'])
-            ->orderBy('updated_at', 'desc')
-            ->paginate(10);
-        if ($conversations == null)
-            return response()->json([
-                'message' => 'no conversations!, start new conversantion!'
-            ]);
-        $data = ConversationResource::collection($conversations);
-
-        return response()->json([
-            'status' => true,
-            'conversations' => $data,
-        ]);
-    }
-
-    public function renterStartConversation(Request $request)
-    {
-        try {
-            $request->validate([
-                'apartment_id' => 'required|exists:apartments,id'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ]);
+        if (!$user) {
+            return ResponseHelper::error('Unauthenticated.', 401);
         }
 
+        $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
+
+        $conversations = Conversation::where(function ($query) use ($user) {
+            $query->where('owner_id', $user->id)
+                ->orWhere('renter_id', $user->id);
+        })
+            ->with(['owner', 'renter', 'apartment', 'messages' => function ($query) {
+                $query->latest()->limit(1);
+            }])
+            ->orderBy('updated_at', 'desc')
+            ->paginate($perPage);
+
+        return ResponseHelper::success($conversations, 'Conversations retrieved successfully.');
+    }
+
+    #[OA\Get(
+        path: "/conversations/{id}",
+        summary: "Get conversation by ID",
+        description: "Retrieve detailed information about a specific conversation",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Conversation retrieved successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Conversation retrieved successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 404, description: "Conversation not found"),
+        ]
+    )]
+    public function show(Request $request, $id)
+    {
         $user = $request->user();
-        $apartmentId = $request->apartment_id;
-        $existingConversation = Conversation::where('renter_id', $user->id)
-            ->where('apartment_id', $apartmentId)
+        if (!$user) {
+            return ResponseHelper::error('Unauthenticated.', 401);
+        }
+
+        $conversation = Conversation::where(function ($query) use ($user) {
+            $query->where('owner_id', $user->id)
+                ->orWhere('renter_id', $user->id);
+        })
+            ->where('id', $id)
+            ->with(['owner', 'renter', 'apartment'])
+            ->firstOrFail();
+
+        return ResponseHelper::success($conversation, 'Conversation retrieved successfully.');
+    }
+
+    #[OA\Post(
+        path: "/conversations",
+        summary: "Create new conversation",
+        description: "Create a new conversation between renter and apartment owner",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["owner_id", "apartment_id"],
+                properties: [
+                    new OA\Property(property: "owner_id", type: "integer", example: 2, description: "Apartment owner ID"),
+                    new OA\Property(property: "apartment_id", type: "integer", example: 1, description: "Apartment ID"),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Conversation created successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Conversation created successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
+    public function store(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return ResponseHelper::error('Unauthenticated.', 401);
+        }
+
+        $request->validate([
+            'owner_id' => 'required|exists:users,id',
+            'apartment_id' => 'nullable|exists:apartments,id',
+        ]);
+
+        // Check if conversation already exists
+        $existingConversation = Conversation::where(function ($query) use ($user, $request) {
+            $query->where(function ($q) use ($user, $request) {
+                $q->where('owner_id', $request->owner_id)
+                    ->where('renter_id', $user->id);
+            })->orWhere(function ($q) use ($user, $request) {
+                $q->where('owner_id', $user->id)
+                    ->where('renter_id', $request->owner_id);
+            });
+        })
             ->first();
 
-        if ($existingConversation != null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'conversation is created acctually!',
-                // 'conversation' => new ConversationResource($existingConversation)
-            ]);
+        if ($existingConversation) {
+            $existingConversation->load(['owner', 'renter', 'apartment']);
+            return ResponseHelper::success($existingConversation, 'Conversation already exists.');
         }
 
-        $apartment = Apartment::findorFail($apartmentId);
+        try {
+            DB::beginTransaction();
 
-        $conversation = Conversation::create([
-            'renter_id' => $user->id,
-            'owner_id' => $apartment->owner_id,
-            'apartment_id' => $apartmentId,
-        ]);
+            $conversation = Conversation::create([
+                'owner_id' => $request->owner_id,
+                'renter_id' => $user->id,
+                'apartment_id' => $request->apartment_id,
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'you start new conversation!',
-            'conversation' => new ConversationResource($conversation),
-        ], 201);
+            $conversation->load(['owner', 'renter', 'apartment']);
+
+            DB::commit();
+
+            return ResponseHelper::success($conversation, 'Conversation created successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::error('Failed to create conversation: ' . $e->getMessage(), 500);
+        }
     }
 
-    public function sendMessage(Request $request)
+    #[OA\Get(
+        path: "/conversations/{id}/messages",
+        summary: "Get conversation messages",
+        description: "Retrieve all messages in a conversation",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", minimum: 1, maximum: 50, default: 20)),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Messages retrieved successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Messages retrieved successfully.")
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function getMessages(Request $request, $id)
     {
-        try {
-            $request->validate([
-                'attachment' => 'nullable',
-                'content' => 'required|string',
-                'conversation_id' => 'required|exists:conversations,id',
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ]);
-        }
         $user = $request->user();
-        $conversationId = $request->conversation_id;
-
-        $conversation = Conversation::findOrFail($conversationId);
-
-        if ($conversation->renter_id != $user->id && $conversation->owner_id != $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'you are not practice in this conversation!'
-            ], 403);
+        if (!$user) {
+            return ResponseHelper::error('Unauthenticated.', 401);
         }
 
-        $attachment_url = null;
-        if ($request->hasFile('attachment'))
-            $attachment_url = $request->file('attachment')->store('attachments', 'public');
+        $conversation = Conversation::where(function ($query) use ($user) {
+            $query->where('owner_id', $user->id)
+                ->orWhere('renter_id', $user->id);
+        })
+            ->where('id', $id)
+            ->firstOrFail();
 
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'attachment_url' => $attachment_url,
-            'content' => $request->content,
-        ]);
+        $perPage = min(max((int)$request->integer('per_page', 20), 1), 50);
 
-        $conversation->touch();
+        $messages = Message::where('conversation_id', $id)
+            ->with('sender')
+            ->orderBy('created_at', 'asc')
+            ->paginate($perPage);
 
-        // (اختياري) إرسال إشعار في الوقت الحقيقي
-        // broadcast(new NewMessage($message))->toOthers();
-
-        return response()->json([
-            'success' => true,
-            'message' => new MesssageResource($message)
-        ], 201);
+        return ResponseHelper::success($messages, 'Messages retrieved successfully.');
     }
 
-    public function getMessages(Request $request)
+    #[OA\Post(
+        path: "/conversations/{id}/messages",
+        summary: "Send message",
+        description: "Send a message in a conversation (real-time via Reverb)",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["content"],
+                properties: [
+                    new OA\Property(property: "content", type: "string", maxLength: 1000, example: "Hello, is this apartment available?"),
+                    new OA\Property(property: "attachment_url", type: "string", format: "url", nullable: true, example: "https://example.com/file.pdf"),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Message sent successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Message sent successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
+    public function sendMessage(Request $request, $id)
     {
-        try {
-            $request->validate([
-                'conversation_id' => 'required|exists:conversations,id'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ]);
-        }
-
         $user = $request->user();
-        $conversationId = $request->conversation_id;
-
-        $conversation = Conversation::findOrFail($conversationId);
-
-        if ($conversation->renter_id != $user->id && $conversation->owner_id != $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'you are not practice in this conversation!'
-            ], 403);
+        if (!$user) {
+            return ResponseHelper::error('Unauthenticated.', 401);
         }
 
-        $messages = Message::where('conversation_id', $conversationId)
-            ->paginate(20);
+        $conversation = Conversation::where(function ($query) use ($user) {
+            $query->where('owner_id', $user->id)
+                ->orWhere('renter_id', $user->id);
+        })
+            ->where('id', $id)
+            ->firstOrFail();
 
-        Message::where('conversation_id', $conversationId)
-            ->where('sender_id', '!=', $user->id)
-            ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-                'read_at' => now()
+        $request->validate([
+            'content' => 'required|string|max:1000',
+            'attachment_url' => 'nullable|url',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $message = Message::create([
+                'conversation_id' => $id,
+                'sender_id' => $user->id,
+                'content' => $request->content,
+                'attachment_url' => $request->attachment_url,
             ]);
 
-        $data = MesssageResource::collection($messages);
+            $conversation->touch(); // Update updated_at
 
-        return response()->json([
-            'success' => true,
-            'messages' => $data
-        ]);
+            $message->load('sender');
+
+            DB::commit();
+
+            // إرسال الرسالة عبر Laravel Reverb
+            broadcast(new MessageSent($message, $id))->toOthers();
+
+            return ResponseHelper::success($message, 'Message sent successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::error('Failed to send message: ' . $e->getMessage(), 500);
+        }
     }
 
-    public function deleteConversation(Request $request)
+    #[OA\Post(
+        path: "/conversations/{id}/mark-read",
+        summary: "Mark messages as read",
+        description: "Mark all unread messages in a conversation as read",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Messages marked as read successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Messages marked as read successfully.")
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function markAsRead(Request $request, $id)
     {
-        try {
-            $request->validate([
-                'conversation_id' => 'required|exists:conversations,id'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ]);
-        }
         $user = $request->user();
-        $conversationId = $request->conversation_id;
-
-        $conversation = Conversation::findOrFail($conversationId);
-
-        if ($conversation->renter_id != $user->id && $conversation->owner_id != $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'you are not practice in this conversation!'
-            ], 403);
+        if (!$user) {
+            return ResponseHelper::error('Unauthenticated.', 401);
         }
 
-        Message::where('conversation_id', $conversationId)->delete();
+        $conversation = Conversation::where(function ($query) use ($user) {
+            $query->where('owner_id', $user->id)
+                ->orWhere('renter_id', $user->id);
+        })
+            ->where('id', $id)
+            ->firstOrFail();
 
-        $conversation->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'conversation deleted succesfully!'
-        ]);
-    }
-
-    public function deleteMessage(Request $request)
-    {
         try {
-            $request->validate([
-                'message_id' => 'required|exists:messages,id'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ]);
+            Message::where('conversation_id', $id)
+                ->where('sender_id', '!=', $user->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+
+            return ResponseHelper::success(null, 'Messages marked as read.');
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to mark messages as read: ' . $e->getMessage(), 500);
         }
-        $user = $request->user();
-        $messageId = $request->message_id;
-        $message = Message::findOrFail($messageId);
-
-        if ($message->sender_id != $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'you can delete your message only!'
-            ], 403);
-        }
-
-        $attachment = $message->attachment_url;
-        if ($attachment != null && Storage::disk('public')->exists($attachment))
-            Storage::disk('public')->delete($attachment);
-
-        $message->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'message deleted seccesfully'
-        ]);
-    }
-
-    public function updateMessage(Request $request)
-    {
-        try {
-            $request->validate([
-                'message_id' => 'required|exists:messages,id',
-                'content' => 'required|string',
-                'attachment' => 'nullable'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ]);
-        }
-
-        $user = $request->user();
-        $messageId = $request->message_id;
-        $message = Message::findOrFail($messageId);
-
-        if ($message->sender_id != $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'you can update your message only!'
-            ], 403);
-        }
-
-        $attachment = $message->attachment_url;
-        if ($attachment != null && Storage::disk('public')->exists($attachment))
-            Storage::disk('public')->delete($attachment);
-
-        if ($request->hasFile('attachment')) {
-            $attachment = $request->file('attachment')->store('attachments', 'public');
-        } else
-            $attachment = null;
-
-        $message->update([
-            'content' => $request->content,
-            'attachment_url' => $attachment,
-            'is_read' => false,
-            'read_at' => null
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'message updated seccesfully',
-            'body' => new MesssageResource($message)
-        ]);
-    }
-
-    public function messageInfo(Request $request)
-    {
-        try {
-            $request->validate([
-                'message_id' => 'required|exists:messages,id'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ]);
-        }
-
-        $message = Message::findorFail($request->message_id);
-
-        return response()->json([
-            'success' => true,
-            'body' => new MesssageResource($message),
-            'read_at' => $message->read_at
-        ]);
     }
 }

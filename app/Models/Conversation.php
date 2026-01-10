@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Conversation extends Model
 {
+    use HasFactory;
+    protected $table = 'conversations';
+
     protected $fillable = [
         'renter_id',
         'owner_id',
@@ -38,6 +42,6 @@ class Conversation extends Model
 
     public function messages()
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(Message::class, 'conversation_id');
     }
 }
