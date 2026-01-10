@@ -62,4 +62,16 @@ class Apartment extends Model
         {
                 return $this->belongsTo(Governorate::class, 'governorate_id');
         }
+
+
+        public function cover()
+        {
+                $photos = $this->photos;
+                $url = null;
+                foreach ($photos as $photo) {
+                        if ($photo->is_cover)
+                                $url = $photo->url;
+                        return $url;
+                }
+        }
 }

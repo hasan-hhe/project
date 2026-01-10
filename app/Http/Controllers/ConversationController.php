@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Events\MessageSent;
+use App\Http\Resources\MesssageResource;
 use App\Models\Conversation;
 use App\Models\Message;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
+
+use function App\Helpers\uploadImage;
 
 class ConversationController extends Controller
 {
@@ -353,5 +358,246 @@ class ConversationController extends Controller
         } catch (\Exception $e) {
             return ResponseHelper::error('Failed to mark messages as read: ' . $e->getMessage(), 500);
         }
+    }
+
+    #[OA\Post(
+        path: "/conversations/delete",
+        summary: "Delete conversation",
+        description: "Delete a conversation and all its messages. Only participants (owner or renter) can delete the conversation.",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["conversation_id"],
+                properties: [
+                    new OA\Property(property: "conversation_id", type: "integer", example: 1, description: "Conversation ID to delete"),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Conversation deleted successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object", nullable: true),
+                        new OA\Property(property: "body", type: "string", example: "Conversation deleted successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: "Forbidden - User is not a participant"),
+            new OA\Response(response: 404, description: "Conversation not found"),
+            new OA\Response(response: 422, description: "Validation error"),
+            new OA\Response(response: 500, description: "Server error"),
+        ]
+    )]
+    public function deleteConversation(Request $request)
+    {
+        try {
+            $request->validate([
+                'conversation_id' => 'required|exists:conversations,id'
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error('Failed to delete conversation: ' . $e->getMessage(), 500);
+        }
+        $user = $request->user();
+        $conversationId = $request->conversation_id;
+
+        $conversation = Conversation::findOrFail($conversationId);
+
+        if ($conversation->renter_id != $user->id && $conversation->owner_id != $user->id) {
+            return ResponseHelper::error('you are not practice in this conversation!', 403);
+        }
+
+        Message::where('conversation_id', $conversationId)->delete();
+
+        $conversation->delete();
+
+        return ResponseHelper::success(null, 'Conversation deleted successfully.');
+    }
+
+    #[OA\Post(
+        path: "/conversations/delete-message",
+        summary: "Delete message",
+        description: "Delete a message. Only the message sender can delete their own message. Attachment files are also deleted.",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["message_id"],
+                properties: [
+                    new OA\Property(property: "message_id", type: "integer", example: 1, description: "Message ID to delete"),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Message deleted successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object", nullable: true),
+                        new OA\Property(property: "body", type: "string", example: "Message deleted successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: "Forbidden - User can only delete their own messages"),
+            new OA\Response(response: 404, description: "Message not found"),
+            new OA\Response(response: 422, description: "Validation error"),
+            new OA\Response(response: 500, description: "Server error"),
+        ]
+    )]
+    public function deleteMessage(Request $request)
+    {
+        try {
+            $request->validate([
+                'message_id' => 'required|exists:messages,id'
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error('Failed to delete message: ' . $e->getMessage(), 500);
+        }
+        $user = $request->user();
+        $messageId = $request->message_id;
+        $message = Message::findOrFail($messageId);
+
+        if ($message->sender_id != $user->id) {
+            return ResponseHelper::error('you can delete your message only!', 403);
+        }
+
+        $attachment = $message->attachment_url;
+        if ($attachment != null && Storage::disk('public')->exists($attachment))
+            Storage::disk('public')->delete($attachment);
+
+        $message->delete();
+
+        return ResponseHelper::success(null, 'Message deleted successfully.');
+    }
+
+    #[OA\Post(
+        path: "/conversations/update-message",
+        summary: "Update message",
+        description: "Update a message content and/or attachment. Only the message sender can update their own message. Old attachment is deleted if a new one is provided.",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "multipart/form-data",
+                schema: new OA\Schema(
+                    required: ["message_id", "content"],
+                    properties: [
+                        new OA\Property(property: "message_id", type: "integer", example: 1, description: "Message ID to update"),
+                        new OA\Property(property: "content", type: "string", example: "Updated message content", description: "New message content"),
+                        new OA\Property(property: "attachment", type: "string", format: "binary", nullable: true, description: "New attachment file (optional)"),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Message updated successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Message updated successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: "Forbidden - User can only update their own messages"),
+            new OA\Response(response: 404, description: "Message not found"),
+            new OA\Response(response: 422, description: "Validation error"),
+            new OA\Response(response: 500, description: "Server error"),
+        ]
+    )]
+    public function updateMessage(Request $request)
+    {
+        try {
+            $request->validate([
+                'message_id' => 'required|exists:messages,id',
+                'content' => 'required|string',
+                'attachment' => 'nullable'
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error('Failed to update message: ' . $e->getMessage(), 500);
+        }
+
+        $user = $request->user();
+        $messageId = $request->message_id;
+        $message = Message::findOrFail($messageId);
+
+        if ($message->sender_id != $user->id) {
+            return ResponseHelper::error('you can update your message only!', 403);
+        }
+
+        $attachment = $message->attachment_url;
+        if ($attachment != null && Storage::disk('public')->exists($attachment))
+            Storage::disk('public')->delete($attachment);
+
+        if ($request->hasFile('attachment')) {
+            $attachment = uploadImage($request->file('attachment'), 'attachments', 'public');
+        } else
+            $attachment = null;
+
+        $message->update([
+            'content' => $request->content,
+            'attachment_url' => $attachment,
+            'is_read' => false,
+            'read_at' => null
+        ]);
+
+        return ResponseHelper::success(new MesssageResource($message), 'Message updated successfully.');
+    }
+
+    #[OA\Post(
+        path: "/conversations/message-info",
+        summary: "Get message information",
+        description: "Retrieve detailed information about a specific message",
+        tags: ["Conversations"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["message_id"],
+                properties: [
+                    new OA\Property(property: "message_id", type: "integer", example: 1, description: "Message ID"),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Message information retrieved successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Message info retrieved successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 404, description: "Message not found"),
+            new OA\Response(response: 422, description: "Validation error"),
+            new OA\Response(response: 500, description: "Server error"),
+        ]
+    )]
+    public function messageInfo(Request $request)
+    {
+        try {
+            $request->validate([
+                'message_id' => 'required|exists:messages,id'
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error('Failed to get message info: ' . $e->getMessage(), 500);
+        }
+
+        $message = Message::findorFail($request->message_id);
+
+        return ResponseHelper::success(new MesssageResource($message), 'Message info retrieved successfully.');
     }
 }
