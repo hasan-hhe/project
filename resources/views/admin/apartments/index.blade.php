@@ -95,6 +95,7 @@
                                         <th>عدد الغرف</th>
                                         <th>التقييم</th>
                                         <th>الحالة</th>
+                                        <th>موصى بها</th>
                                         <th>الإجراءات</th>
                                     </tr>
                                 </thead>
@@ -117,6 +118,12 @@
                                                 <span
                                                     class="badge bg-{{ $apartment->is_active ? 'success' : 'secondary' }}">
                                                     {{ $apartment->is_active ? 'نشط' : 'غير نشط' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="badge bg-{{ $apartment->is_recommended ? 'info' : 'secondary' }}">
+                                                    {{ $apartment->is_recommended ? 'نعم' : 'لا' }}
                                                 </span>
                                             </td>
                                             <td>

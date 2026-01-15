@@ -20,7 +20,7 @@ class Apartment extends Model
                 'address_line',
                 'rating_avg',
                 'is_active',
-                'is_favorite',
+                'is_recommended',
         ];
 
         public function owner()

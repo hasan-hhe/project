@@ -9,12 +9,17 @@ class City extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'governorate_id',
+    ];
+
     public function governorate()
     {
         return $this->belongsTo(Governorate::class, 'governorate_id');
     }
 
-    public function apatments()
+    public function apartments()
     {
         return $this->hasMany(Apartment::class);
     }

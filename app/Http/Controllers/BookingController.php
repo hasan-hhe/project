@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\ReservationResource;
 use App\Models\Booking;
 use App\Models\Apartment;
 use Illuminate\Http\Request;
@@ -38,58 +39,57 @@ class BookingController extends Controller
     public function getMyReservations(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
         $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
-        
+
         $bookings = Booking::where('renter_id', $user->id)
-            ->with(['apartment', 'apartment.owner'])
+            ->with(['apartment', 'apartment.owner', 'apartment.photos'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success($bookings, 'Reservations retrieved successfully.');
+        return ResponseHelper::success([
+            'bookings' => ReservationResource::collection($bookings)
+        ], 'تم جلب الحجوزات بنجاح.');
     }
 
-    #[OA\Get(
-        path: "/reservations/{id}",
-        summary: "Get reservation by ID",
-        description: "Retrieve detailed information about a specific reservation",
-        tags: ["Reservations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Reservation ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Reservation retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Reservation retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "Reservation not found"),
-        ]
-    )]
-    public function show(Request $request, $id)
-    {
-        $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
+    // #[OA\Get(
+    //     path: "/reservations/{id}",
+    //     summary: "Get reservation by ID",
+    //     description: "Retrieve detailed information about a specific reservation",
+    //     tags: ["Reservations"],
+    //     security: [["bearerAuth" => []]],
+    //     parameters: [
+    //         new OA\Parameter(name: "id", in: "path", required: true, description: "Reservation ID", schema: new OA\Schema(type: "integer")),
+    //     ],
+    //     responses: [
+    //         new OA\Response(
+    //             response: 200,
+    //             description: "Reservation retrieved successfully",
+    //             content: new OA\JsonContent(
+    //                 properties: [
+    //                     new OA\Property(property: "message", type: "string", example: "success"),
+    //                     new OA\Property(property: "data", type: "object"),
+    //                     new OA\Property(property: "body", type: "string", example: "Reservation retrieved successfully.")
+    //                 ]
+    //             )
+    //         ),
+    //         new OA\Response(response: 404, description: "Reservation not found"),
+    //     ]
+    // )]
+    // public function show(Request $request, $id)
+    // {
+    //     $user = $request->user();
+    //     if (!$user) {
+    //         return ResponseHelper::error('Unauthenticated.', 401);
+    //     }
 
-        $booking = Booking::where('id', $id)
-            ->where('renter_id', $user->id)
-            ->with(['apartment', 'apartment.owner', 'reviews'])
-            ->firstOrFail();
+    //     $booking = Booking::where('id', $id)
+    //         ->where('renter_id', $user->id)
+    //         ->with(['apartment', 'apartment.owner', 'reviews'])
+    //         ->firstOrFail();
 
-        return ResponseHelper::success($booking, 'Reservation retrieved successfully.');
-    }
+    //     return ResponseHelper::success($booking, 'Reservation retrieved successfully.');
+    // }
 
     #[OA\Post(
         path: "/reservations",
@@ -128,7 +128,7 @@ class BookingController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $request->validate([
@@ -153,7 +153,7 @@ class BookingController extends Controller
             ->exists();
 
         if ($conflictingBooking) {
-            return ResponseHelper::error('Apartment is not available for the selected dates.', 400);
+            return ResponseHelper::error('الشقة غير متاحة للتواريخ المحددة.', 400);
         }
 
         // Calculate total price
@@ -161,6 +161,10 @@ class BookingController extends Controller
         $endDate = Carbon::parse($request->end_date);
         $nights = $startDate->diffInDays($endDate);
         $totalPrice = $apartment->price * $nights;
+
+        if ($user->wallet_balance < $totalPrice) {
+            return ResponseHelper::error('رصيدك غير كافٍ.', 400);
+        }
 
         try {
             DB::beginTransaction();
@@ -178,10 +182,12 @@ class BookingController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success($booking, 'Reservation created successfully.');
+            return ResponseHelper::success([
+                'booking' => new ReservationResource($booking)
+            ], 'تم إنشاء الحجز بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to create reservation: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في إنشاء الحجز: ' . $e->getMessage(), 500);
         }
     }
 
@@ -200,6 +206,7 @@ class BookingController extends Controller
                 properties: [
                     new OA\Property(property: "start_date", type: "string", format: "date", nullable: true, example: "2026-01-15"),
                     new OA\Property(property: "end_date", type: "string", format: "date", nullable: true, example: "2026-01-20"),
+                    new OA\Property(property: "change_reason", type: "string", nullable: true, example: "تغيير في الخطط"),
                 ]
             )
         ),
@@ -221,22 +228,24 @@ class BookingController extends Controller
     public function update(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
         $booking = Booking::where('id', $id)
             ->where('renter_id', $user->id)
             ->firstOrFail();
 
         if ($booking->status !== 'PENDING') {
-            return ResponseHelper::error('Only pending reservations can be updated.', 400);
+            return ResponseHelper::error('يمكن تحديث الحجوزات المعلقة فقط.', 400);
         }
 
-        $request->validate([
-            'start_date' => 'nullable|date|after_or_equal:today',
-            'end_date' => 'nullable|date|after:start_date',
-        ]);
+        try {
+            $request->validate([
+                'start_date' => 'nullable|date|after_or_equal:today',
+                'end_date' => 'nullable|date|after:start_date',
+                'change_reason' => 'nullable|string|max:500',
+            ]);
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -259,7 +268,7 @@ class BookingController extends Controller
                 ->exists();
 
             if ($conflictingBooking) {
-                return ResponseHelper::error('Apartment is not available for the selected dates.', 400);
+                return ResponseHelper::error('الشقة غير متاحة للتواريخ المحددة.', 400);
             }
 
             // Recalculate total price
@@ -268,20 +277,29 @@ class BookingController extends Controller
             $nights = $start->diffInDays($end);
             $totalPrice = $booking->apartment->price * $nights;
 
-            $booking->update([
+            $updateData = [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'total_price' => $totalPrice,
-            ]);
+            ];
+
+            // إضافة سبب التغيير إذا تم توفيره
+            if ($request->has('change_reason') && $request->change_reason) {
+                $updateData['change_reason'] = $request->change_reason;
+            }
+
+            $booking->update($updateData);
 
             $booking->load(['apartment', 'apartment.owner']);
 
             DB::commit();
 
-            return ResponseHelper::success($booking, 'Reservation updated successfully.');
+            return ResponseHelper::success([
+                'booking' => new ReservationResource($booking)
+            ], 'تم تحديث الحجز بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to update reservation: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في تحديث الحجز: ' . $e->getMessage(), 500);
         }
     }
 
@@ -321,7 +339,7 @@ class BookingController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $booking = Booking::where('id', $id)
@@ -329,7 +347,7 @@ class BookingController extends Controller
             ->firstOrFail();
 
         if (in_array($booking->status, ['CANCLED', 'COMPLETED'])) {
-            return ResponseHelper::error('Reservation cannot be cancelled.', 400);
+            return ResponseHelper::error('لا يمكن إلغاء الحجز.', 400);
         }
 
         $request->validate([
@@ -341,15 +359,15 @@ class BookingController extends Controller
 
             $booking->update([
                 'status' => 'CANCLED',
-                'cancel_reason' => $request->cancel_reason ?? 'Cancelled by user',
+                'cancel_reason' => $request->cancel_reason ?? 'تم الإلغاء من قبل المستخدم',
             ]);
 
             DB::commit();
 
-            return ResponseHelper::success($booking, 'Reservation cancelled successfully.');
+            return ResponseHelper::success(null, 'تم إلغاء الحجز بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to cancel reservation: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في إلغاء الحجز: ' . $e->getMessage(), 500);
         }
     }
 
@@ -381,7 +399,7 @@ class BookingController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $booking = Booking::where('id', $id)
@@ -389,7 +407,7 @@ class BookingController extends Controller
             ->firstOrFail();
 
         if ($booking->status === 'CONFIRMED') {
-            return ResponseHelper::error('Confirmed reservations cannot be deleted. Please cancel instead.', 400);
+            return ResponseHelper::error('لا يمكن حذف الحجوزات المؤكدة. يرجى الإلغاء بدلاً من ذلك.', 400);
         }
 
         try {
@@ -397,11 +415,10 @@ class BookingController extends Controller
             $booking->delete();
             DB::commit();
 
-            return ResponseHelper::success(null, 'Reservation deleted successfully.');
+            return ResponseHelper::success(null, 'تم حذف الحجز بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to delete reservation: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في حذف الحجز: ' . $e->getMessage(), 500);
         }
     }
 }
-

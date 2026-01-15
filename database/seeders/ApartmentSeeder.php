@@ -56,7 +56,7 @@ class ApartmentSeeder extends Seeder
                 'address_line' => 'شارع ' . $streetNames[array_rand($streetNames)] . ' - ' . $city->name,
                 'rating_avg' => round(rand(35, 50) / 10, 1),
                 'is_active' => rand(1, 100) <= 80, // 80% نشطة
-                'is_favorite' => false,
+                'is_recommended' => rand(1, 100) <= 30, // 30% موصى بها
             ]);
         }
     }

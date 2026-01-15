@@ -16,16 +16,16 @@ class UserRecource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->first_name . ' ' . $this->last_name,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
+            'phone_number' => $this->phone_number,
             'email' => $this->email,
+            'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
+            'account_type' => $this->account_type,
+            'status' => $this->status,
             'avatar_url' => $this->avatar_url,
             'identity_document_url' => $this->identity_document_url,
-            'date_of_birth' => $this->date_of_birth,
-            'account_type' => $this->account_type,
-            'phone_number' => $this->phone_number,
-            'wallet_balance' => $this->wallet_balance,
+            'wallet_balance' => (float) $this->wallet_balance,
         ];
     }
 }

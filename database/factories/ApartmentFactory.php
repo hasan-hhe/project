@@ -30,7 +30,7 @@ class ApartmentFactory extends Factory
             'address_line' => $this->faker->address(),
             'rating_avg' => $this->faker->randomFloat(2, 1, 5),
             'is_active' => $this->faker->boolean(),
-            'is_favorite' => $this->faker->boolean(),
+            'is_recommended' => $this->faker->boolean(),
             'photosURL' => json_encode([$this->faker->imageUrl(), $this->faker->imageUrl()])
         ];
     }

@@ -61,6 +61,14 @@
                                             </span>
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <th>موصى بها</th>
+                                        <td>
+                                            <span class="badge bg-{{ $apartment->is_recommended ? 'info' : 'secondary' }}">
+                                                {{ $apartment->is_recommended ? 'نعم' : 'لا' }}
+                                            </span>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>

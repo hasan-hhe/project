@@ -16,6 +16,8 @@ class Booking extends Model
         'end_date',
         'total_price',
         'cancel_reason',
+        'change_reason',
+        'rejection_reason',
         'status',
     ];
 

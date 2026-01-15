@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Ably\AblyRest;
+use App\Events\NotificationSent;
 use App\Mail\VerificationEmail;
 use App\Models\CardRecharge;
 use App\Models\Favorite;
@@ -156,20 +157,34 @@ function addPagination($items)
     return $paginated;
 }
 
+function sendNotificationToUser($userId, $title, $body)
+{
+    $notification = Notification::create([
+        'title' => $title,
+        'body' => $body,
+    ]);
+
+    $user = User::find($userId);
+    $user->notifications()->attach($notification->id);
+
+    sendNotification($notification, $userId);
+}
+
 function sendNotification($notification, $userId)
 {
     try {
         $user = User::find($userId);
         if (!$user) {
-            return;
+            return false;
         }
 
-        // إرسال الإشعار عبر Laravel Reverb
-        broadcast(new \App\Events\NotificationSent($notification, $userId))->toOthers();
+        // استخدام broadcast() مباشرة لضمان البث المتزامن وظهور البيانات في Reverb debug
+        broadcast(new NotificationSent($notification, $userId));
 
         return true;
     } catch (\Exception $e) {
         Log::error('Error sending notification: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
         return false;
     }
 }

@@ -35,7 +35,9 @@ class LocationController extends Controller
             ->orderBy('name', 'asc')
             ->get();
 
-        return ResponseHelper::success($governorates, 'Governorates retrieved successfully.');
+        return ResponseHelper::success([
+            'governorates' => $governorates
+        ], 'تم جلب المحافظات بنجاح.');
     }
 
     #[OA\Get(
@@ -71,101 +73,106 @@ class LocationController extends Controller
 
         $cities = $query->orderBy('name', 'asc')->get();
 
-        return ResponseHelper::success($cities, 'Cities retrieved successfully.');
+        return ResponseHelper::success([
+            'cities' => $cities
+        ], 'تم جلب المدن بنجاح.');
     }
 
-    #[OA\Get(
-        path: "/governorates/{id}/cities",
-        summary: "Get cities by governorate",
-        description: "Retrieve all cities for a specific governorate (Public endpoint - no authentication required)",
-        tags: ["Locations"],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Governorate ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Cities retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "array", items: new OA\Items(type: "object")),
-                        new OA\Property(property: "body", type: "string", example: "Cities retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
-    public function getCitiesByGovernorate(Request $request, $governorateId)
-    {
-        $cities = City::where('governorate_id', $governorateId)
-            ->with('governorate')
-            ->orderBy('name', 'asc')
-            ->get();
+    // #[OA\Get(
+    //     path: "/governorates/{id}/cities",
+    //     summary: "Get cities by governorate",
+    //     description: "Retrieve all cities for a specific governorate (Public endpoint - no authentication required)",
+    //     tags: ["Locations"],
+    //     parameters: [
+    //         new OA\Parameter(name: "id", in: "path", required: true, description: "Governorate ID", schema: new OA\Schema(type: "integer")),
+    //     ],
+    //     responses: [
+    //         new OA\Response(
+    //             response: 200,
+    //             description: "Cities retrieved successfully",
+    //             content: new OA\JsonContent(
+    //                 properties: [
+    //                     new OA\Property(property: "message", type: "string", example: "success"),
+    //                     new OA\Property(property: "data", type: "array", items: new OA\Items(type: "object")),
+    //                     new OA\Property(property: "body", type: "string", example: "Cities retrieved successfully.")
+    //                 ]
+    //             )
+    //         ),
+    //     ]
+    // )]
+    // public function getCitiesByGovernorate(Request $request, $governorateId)
+    // {
+    //     $cities = City::where('governorate_id', $governorateId)
+    //         ->with('governorate')
+    //         ->orderBy('name', 'asc')
+    //         ->get();
 
-        return ResponseHelper::success($cities, 'Cities retrieved successfully.');
-    }
+    //     return ResponseHelper::success([
+    //         'cities' => $cities
+    //     ], 'Cities retrieved successfully.');
+    // }
 
-    #[OA\Get(
-        path: "/governorates/{id}",
-        summary: "Get governorate by ID",
-        description: "Retrieve a specific governorate with its cities (Public endpoint - no authentication required)",
-        tags: ["Locations"],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Governorate ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Governorate retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Governorate retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "Governorate not found"),
-        ]
-    )]
-    public function getGovernorate(Request $request, $id)
-    {
-        $governorate = Governorate::with('cities')
-            ->findOrFail($id);
+    // #[OA\Get(
+    //     path: "/governorates/{id}",
+    //     summary: "Get governorate by ID",
+    //     description: "Retrieve a specific governorate with its cities (Public endpoint - no authentication required)",
+    //     tags: ["Locations"],
+    //     parameters: [
+    //         new OA\Parameter(name: "id", in: "path", required: true, description: "Governorate ID", schema: new OA\Schema(type: "integer")),
+    //     ],
+    //     responses: [
+    //         new OA\Response(
+    //             response: 200,
+    //             description: "Governorate retrieved successfully",
+    //             content: new OA\JsonContent(
+    //                 properties: [
+    //                     new OA\Property(property: "message", type: "string", example: "success"),
+    //                     new OA\Property(property: "data", type: "object"),
+    //                     new OA\Property(property: "body", type: "string", example: "Governorate retrieved successfully.")
+    //                 ]
+    //             )
+    //         ),
+    //         new OA\Response(response: 404, description: "Governorate not found"),
+    //     ]
+    // )]
+    // public function getGovernorate(Request $request, $id)
+    // {
+    //     $governorate = Governorate::with('cities')
+    //         ->findOrFail($id);
 
-        return ResponseHelper::success($governorate, 'Governorate retrieved successfully.');
-    }
+    //     return ResponseHelper::success([
+    //         'governorate' => $governorate
+    //     ], 'Governorate retrieved successfully.');
+    // }
 
-    #[OA\Get(
-        path: "/cities/{id}",
-        summary: "Get city by ID",
-        description: "Retrieve a specific city with its governorate (Public endpoint - no authentication required)",
-        tags: ["Locations"],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "City ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "City retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "City retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "City not found"),
-        ]
-    )]
-    public function getCity(Request $request, $id)
-    {
-        $city = City::with('governorate')
-            ->findOrFail($id);
+    // #[OA\Get(
+    //     path: "/cities/{id}",
+    //     summary: "Get city by ID",
+    //     description: "Retrieve a specific city with its governorate (Public endpoint - no authentication required)",
+    //     tags: ["Locations"],
+    //     parameters: [
+    //         new OA\Parameter(name: "id", in: "path", required: true, description: "City ID", schema: new OA\Schema(type: "integer")),
+    //     ],
+    //     responses: [
+    //         new OA\Response(
+    //             response: 200,
+    //             description: "City retrieved successfully",
+    //             content: new OA\JsonContent(
+    //                 properties: [
+    //                     new OA\Property(property: "message", type: "string", example: "success"),
+    //                     new OA\Property(property: "data", type: "object"),
+    //                     new OA\Property(property: "body", type: "string", example: "City retrieved successfully.")
+    //                 ]
+    //             )
+    //         ),
+    //         new OA\Response(response: 404, description: "City not found"),
+    //     ]
+    // )]
+    // public function getCity(Request $request, $id)
+    // {
+    //     $city = City::with('governorate')
+    //         ->findOrFail($id);
 
-        return ResponseHelper::success($city, 'City retrieved successfully.');
-    }
+    //     return ResponseHelper::success($city, 'City retrieved successfully.');
+    // }
 }
-

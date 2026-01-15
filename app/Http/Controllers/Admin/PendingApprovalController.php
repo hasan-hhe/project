@@ -15,17 +15,16 @@ class PendingApprovalController extends Controller
     public function index(Request $request)
     {
         $query = User::where('status', 'PENDING')
-            ->where('account_type', 'OWNER')
             ->orderBy('created_at', 'DESC');
 
         // Search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('phone_number', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -40,7 +39,7 @@ class PendingApprovalController extends Controller
      */
     public function show(User $user)
     {
-        if ($user->status != 'PENDING' || $user->account_type != 'OWNER') {
+        if ($user->status != 'PENDING') {
             return redirect()->back()->with('error', __('هذا المستخدم لا يحتاج إلى موافقة'));
         }
 
@@ -57,9 +56,8 @@ class PendingApprovalController extends Controller
         }
 
         try {
-            $user->update([
-                'status' => 'APPROVED',
-            ]);
+            $user->status = 'APPROVED';
+            $user->save();
 
             return redirect()
                 ->route('admin.pending-approvals.index')
@@ -85,9 +83,8 @@ class PendingApprovalController extends Controller
         }
 
         try {
-            $user->update([
-                'status' => 'REJECTED',
-            ]);
+            $user->status = 'REJECTED';
+            $user->save();
 
             return redirect()
                 ->route('admin.pending-approvals.index')

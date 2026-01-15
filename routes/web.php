@@ -14,9 +14,11 @@ use App\Http\Controllers\Admin\PendingApprovalController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\ApartmentPhotoController;
+use App\Http\Controllers\Admin\GovernorateController;
+use App\Http\Controllers\Admin\CityController;
 
 if (!defined('paginateNumber')) {
-    define('paginateNumber', 10);
+    define('paginateNumber', 100);
 }
 
 Route::get('/', function () {
@@ -120,4 +122,24 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::patch('/apartments/{apartment}/photos/{photo}', [ApartmentPhotoController::class, 'update'])->name('apartments.photos.update');
     Route::post('/apartments/{apartment}/photos/{photo}/set-cover', [ApartmentPhotoController::class, 'setCover'])->name('apartments.photos.set-cover');
     Route::delete('/apartments/{apartment}/photos/{photo}', [ApartmentPhotoController::class, 'destroy'])->name('apartments.photos.destroy');
+
+    // Governorates Routes
+    Route::get('/governorates', [GovernorateController::class, 'index'])->name('governorates.index');
+    Route::get('/governorates/create', [GovernorateController::class, 'create'])->name('governorates.create');
+    Route::post('/governorates', [GovernorateController::class, 'store'])->name('governorates.store');
+    Route::get('/governorates/{governorate}', [GovernorateController::class, 'show'])->name('governorates.show');
+    Route::get('/governorates/{governorate}/edit', [GovernorateController::class, 'edit'])->name('governorates.edit');
+    Route::patch('/governorates/{governorate}', [GovernorateController::class, 'update'])->name('governorates.update');
+    Route::delete('/governorates/{governorate}', [GovernorateController::class, 'destroy'])->name('governorates.destroy');
+    Route::post('/governorates/destroy-check', [GovernorateController::class, 'destroyCheck'])->name('governorates.destroy-check');
+
+    // Cities Routes
+    Route::get('/cities', [CityController::class, 'index'])->name('cities.index');
+    Route::get('/cities/create', [CityController::class, 'create'])->name('cities.create');
+    Route::post('/cities', [CityController::class, 'store'])->name('cities.store');
+    Route::get('/cities/{city}', [CityController::class, 'show'])->name('cities.show');
+    Route::get('/cities/{city}/edit', [CityController::class, 'edit'])->name('cities.edit');
+    Route::patch('/cities/{city}', [CityController::class, 'update'])->name('cities.update');
+    Route::delete('/cities/{city}', [CityController::class, 'destroy'])->name('cities.destroy');
+    Route::post('/cities/destroy-check', [CityController::class, 'destroyCheck'])->name('cities.destroy-check');
 });

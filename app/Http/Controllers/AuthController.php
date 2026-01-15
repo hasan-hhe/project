@@ -13,7 +13,7 @@ use OpenApi\Attributes as OA;
 
 use function App\Helpers\uploadImage;
 
-class SignupController extends Controller
+class AuthController extends Controller
 {
     #[OA\Post(
         path: "/auth/register",
@@ -97,23 +97,19 @@ class SignupController extends Controller
                 'last_name' => $request->last_name,
                 'phone_number' => $request->phone_number,
                 'date_of_birth' => $request->date_of_birth,
-                // 'account_type' => $request->account_type,
+                'account_type' => $request->account_type,
                 'email' => $request->email,
                 'avatar_url' => $avatar,
-                'identity_document_url' => $identity_document,
                 'identity_document_url' => $identity_document,
                 'password' => Hash::make($request->password)
             ]);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            return  ResponseHelper::error($e->getMessage(), 400);
         }
 
-        $token = $user->createToken('api_token')->plainTextToken;
-
         return ResponseHelper::success([
-            'user'  => new UserRecource($user),
-            'token' => $token,
-        ], 'تم تسجيل الدخول بنجاح');
+            'user'  => new UserRecource($user)
+        ], 'تم تسجيل الحساب بنجاح , بانتظار الموافقة من الادمن');
     }
 
     #[OA\Post(
@@ -168,11 +164,15 @@ class SignupController extends Controller
         try {
             $user = User::where('phone_number', $request->phone_number)->firstorFail();
         } catch (Exception $e) {
-            return ResponseHelper::error('phone number not found', 404);
+            return ResponseHelper::error('رقم الهاتف غير موجود', 404);
+        }
+
+        if ($user->status == 'PENDING') {
+            return ResponseHelper::error('لم يتم الموافقة على حسابك بعد');
         }
 
         if (!Hash::check($request->password, $user->password)) {
-            return ResponseHelper::error('password not correct', 401);
+            return ResponseHelper::error('كلمة المرور غير صحيحة', 401);
         }
 
         $token = $user->createToken('api_token')->plainTextToken;
@@ -208,6 +208,6 @@ class SignupController extends Controller
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
-        return ResponseHelper::success(null, 'Logout done!');
+        return ResponseHelper::success(null, 'تم تسجيل الخروج بنجاح!');
     }
 }

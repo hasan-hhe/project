@@ -15,7 +15,7 @@ use OpenApi\Attributes as OA;
 
 use function App\Helpers\uploadImage;
 
-class profileController extends Controller
+class ProfileController extends Controller
 {
     #[OA\Get(
         path: "/my-profile",
@@ -67,62 +67,7 @@ class profileController extends Controller
             'avatar_url' => $user->avatar_url,
             'identity_document_url' => $user->identity_document_url,
             'email' => $user->email
-        ], 'Profile retrieved successfully.');
-    }
-
-    #[OA\Get(
-        path: "/avatar-image",
-        summary: "Get user avatar",
-        description: "Retrieve authenticated user's avatar image URL",
-        tags: ["Profile"],
-        security: [["bearerAuth" => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Avatar retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object", properties: [new OA\Property(property: "avatar_url", type: "string")]),
-                        new OA\Property(property: "body", type: "string", example: "Avatar retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "Avatar not found"),
-        ]
-    )]
-    public function getAvatar(Request $request)
-    {
-        $user = $request->user();
-        if ($user->avatar_url == null)
-            return ResponseHelper::error('no avatar, put your avatar!', 404);
-        return ResponseHelper::success(['avatar_url' => $user->avatar_url], 'Avatar retrieved successfully.');
-    }
-
-    #[OA\Get(
-        path: "/identity-document-image",
-        summary: "Get identity document",
-        description: "Retrieve authenticated user's identity document image URL",
-        tags: ["Profile"],
-        security: [["bearerAuth" => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Identity document retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object", properties: [new OA\Property(property: "identity_document_url", type: "string")]),
-                        new OA\Property(property: "body", type: "string", example: "Identity document retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
-    public function getIdentityDocument(Request $request)
-    {
-        $user = $request->user();
-        return ResponseHelper::success(['identity_document_url' => $user->identity_document_url], 'Identity document retrieved successfully.');
+        ], 'تم جلب الملف الشخصي بنجاح.');
     }
 
     #[OA\Post(
@@ -173,27 +118,31 @@ class profileController extends Controller
             $request->validate([
                 'first_name' => 'required|string',
                 'avatar_image' => 'nullable|image|mimes:png,jpg,gif',
-                'identity_document_image' => 'required|image|mimes:png,jpg,gif',
+                'identity_document_image' => 'nullable|image|mimes:png,jpg,gif',
                 'last_name' => 'required|string',
                 'phone_number' => 'required|string|regex:/^[0-9]+$/',
                 'date_of_birth' => 'nullable|date',
-                'account_type' => 'nullable|in:tenant,apartment_owner',
-                'email' => 'nullable|string|email|unique:users',
-                'password' => 'required|min:6'
+                'email' => 'nullable|string|email',
+                'password' => 'nullable|min:6'
             ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
+        try {
             DB::beginTransaction();
-            $avatar = $user->avatar_url;
+            $avatar = $user->avatar_url ?? null;
+
             if ($request->hasFile('avatar_image')) {
-                if (Storage::disk('public')->exists($avatar))
+                if ($avatar && Storage::disk('public')->exists($avatar))
                     Storage::disk('public')->delete($avatar);
 
                 $avatar = uploadImage($request->file('avatar_image'), 'avatars', 'public');
             }
 
-            $identity_document = $user->identity_document_url;
+            $identity_document = $user->identity_document_url ?? null;
             if ($request->hasFile('identity_document_image')) {
-                if (Storage::disk('public')->exists($identity_document))
+                if ($identity_document && Storage::disk('public')->exists($identity_document))
                     Storage::disk('public')->delete($identity_document);
 
                 $identity_document = uploadImage($request->file('identity_document_image'), 'identity_documents', 'public');
@@ -206,17 +155,22 @@ class profileController extends Controller
                 'last_name' => $request->last_name,
                 'phone_number' => $request->phone_number,
                 'date_of_birth' => $request->date_of_birth,
-                'account_type' => $request->account_type,
                 'email' => $request->email,
-                'password' => Hash::make($request->password)
             ]);
 
+            if ($request->filled('password')) {
+                $user->update([
+                    'password' => Hash::make($request->password)
+                ]);
+            }
+
             DB::commit();
+            return ResponseHelper::success([
+                'user' => new UserRecource($user)
+            ], 'تم تحديث الملف الشخصي بنجاح.');
         } catch (Exception $e) {
             DB::rollback();
-            return ResponseHelper::error('update failed, error: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في التحديث، خطأ: ' . $e->getMessage(), 500);
         }
-
-        return ResponseHelper::success(new UserRecource($user), 'Profile updated successfully.');
     }
 }

@@ -3,16 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\ApartmentPhotoResource;
 use App\Http\Resources\ApartmentResource;
+use App\Http\Resources\ReservationResource;
 use App\Models\Apartment;
+use App\Models\Booking;
 use App\Models\Photo;
 use App\Models\City;
 use App\Models\Governorate;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
 
+use function App\Helpers\sendNotification;
+use function App\Helpers\sendNotificationToUser;
 use function App\Helpers\uploadImage;
 
 class OwnerApartmentController extends Controller
@@ -44,8 +50,8 @@ class OwnerApartmentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+        if ($user->account_type !== 'OWNER') {
+            return ResponseHelper::error('يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
@@ -55,7 +61,9 @@ class OwnerApartmentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success(ApartmentResource::collection($apartments), 'Apartments retrieved successfully.');
+        return ResponseHelper::success([
+            'apartments' => ApartmentResource::collection($apartments)
+        ], 'تم جلب الشقق بنجاح.');
     }
 
     #[OA\Get(
@@ -81,8 +89,8 @@ class OwnerApartmentController extends Controller
     public function getLocations(Request $request)
     {
         $user = $request->user();
-        if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+        if ($user->account_type !== 'OWNER') {
+            return ResponseHelper::error('يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $governorates = Governorate::with('cities')->orderBy('name', 'asc')->get();
@@ -91,48 +99,48 @@ class OwnerApartmentController extends Controller
         return ResponseHelper::success([
             'governorates' => $governorates,
             'cities' => $cities,
-        ], 'Locations retrieved successfully.');
+        ], 'تم جلب المواقع بنجاح.');
     }
 
-    #[OA\Get(
-        path: "/owner/apartments/{id}",
-        summary: "Get owner apartment by ID",
-        description: "Retrieve detailed information about a specific apartment owned by the authenticated user (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Apartment retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Apartment retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: "Unauthorized"),
-            new OA\Response(response: 404, description: "Apartment not found"),
-        ]
-    )]
-    public function show(Request $request, $id)
-    {
-        $user = $request->user();
-        if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
-        }
+    // #[OA\Get(
+    //     path: "/owner/apartments/{id}",
+    //     summary: "Get owner apartment by ID",
+    //     description: "Retrieve detailed information about a specific apartment owned by the authenticated user (OWNER account type required)",
+    //     tags: ["Owner"],
+    //     security: [["bearerAuth" => []]],
+    //     parameters: [
+    //         new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
+    //     ],
+    //     responses: [
+    //         new OA\Response(
+    //             response: 200,
+    //             description: "Apartment retrieved successfully",
+    //             content: new OA\JsonContent(
+    //                 properties: [
+    //                     new OA\Property(property: "message", type: "string", example: "success"),
+    //                     new OA\Property(property: "data", type: "object"),
+    //                     new OA\Property(property: "body", type: "string", example: "Apartment retrieved successfully.")
+    //                 ]
+    //             )
+    //         ),
+    //         new OA\Response(response: 403, description: "Unauthorized"),
+    //         new OA\Response(response: 404, description: "Apartment not found"),
+    //     ]
+    // )]
+    // public function show(Request $request, $id)
+    // {
+    //     $user = $request->user();
+    //     if (!$user || $user->account_type !== 'OWNER') {
+    //         return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+    //     }
 
-        $apartment = Apartment::where('id', $id)
-            ->where('owner_id', $user->id)
-            ->with(['city', 'governorate', 'photos', 'bookings.renter', 'reviews.user'])
-            ->firstOrFail();
+    //     $apartment = Apartment::where('id', $id)
+    //         ->where('owner_id', $user->id)
+    //         ->with(['city', 'governorate', 'photos', 'bookings.renter', 'reviews.user'])
+    //         ->firstOrFail();
 
-        return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
-    }
+    //     return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
+    // }
 
     #[OA\Post(
         path: "/owner/apartments",
@@ -179,12 +187,12 @@ class OwnerApartmentController extends Controller
     {
         $user = $request->user();
         if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+            return ResponseHelper::error('غير مصرح. يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         // Check if user is approved
         if ($user->status !== 'APPROVED') {
-            return ResponseHelper::error('Your account is not approved yet. Please wait for admin approval.', 403);
+            return ResponseHelper::error('حسابك غير موافق عليه بعد. يرجى انتظار موافقة الإدارة.', 403);
         }
 
         $request->validate([
@@ -213,7 +221,7 @@ class OwnerApartmentController extends Controller
                 'address_line' => $request->address_line,
                 'rating_avg' => 5.0,
                 'is_active' => false, // Default inactive until admin approves
-                'is_favorite' => false,
+                'is_recommended' => false,
             ]);
 
             // Upload photos if provided
@@ -236,10 +244,12 @@ class OwnerApartmentController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment created successfully.');
+            return ResponseHelper::success([
+                'apartment' => new ApartmentResource($apartment)
+            ], 'تم إنشاء الشقة بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to create apartment: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في إنشاء الشقة: ' . $e->getMessage(), 500);
         }
     }
 
@@ -285,7 +295,7 @@ class OwnerApartmentController extends Controller
     {
         $user = $request->user();
         if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+            return ResponseHelper::error('غير مصرح. يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $apartment = Apartment::where('id', $id)
@@ -319,10 +329,12 @@ class OwnerApartmentController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment updated successfully.');
+            return ResponseHelper::success([
+                'apartment' => new ApartmentResource($apartment),
+            ], 'تم تحديث الشقة بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to update apartment: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في تحديث الشقة: ' . $e->getMessage(), 500);
         }
     }
 
@@ -355,7 +367,7 @@ class OwnerApartmentController extends Controller
     {
         $user = $request->user();
         if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+            return ResponseHelper::error('غير مصرح. يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $apartment = Apartment::where('id', $id)
@@ -368,7 +380,7 @@ class OwnerApartmentController extends Controller
             ->count();
 
         if ($activeBookings > 0) {
-            return ResponseHelper::error('Cannot delete apartment with active bookings.', 400);
+            return ResponseHelper::error('لا يمكن حذف الشقة مع وجود حجوزات نشطة.', 400);
         }
 
         try {
@@ -386,10 +398,10 @@ class OwnerApartmentController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success(null, 'Apartment deleted successfully.');
+            return ResponseHelper::success(null, 'تم حذف الشقة بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to delete apartment: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في حذف الشقة: ' . $e->getMessage(), 500);
         }
     }
 
@@ -420,7 +432,7 @@ class OwnerApartmentController extends Controller
     {
         $user = $request->user();
         if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+            return ResponseHelper::error('غير مصرح. يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $apartment = Apartment::where('id', $id)
@@ -432,7 +444,9 @@ class OwnerApartmentController extends Controller
             ->orderBy('id')
             ->get();
 
-        return ResponseHelper::success($photos, 'Photos retrieved successfully.');
+        return ResponseHelper::success([
+            'photos' => ApartmentPhotoResource::collection($photos)
+        ], 'تم جلب الصور بنجاح.');
     }
 
     /**
@@ -477,7 +491,7 @@ class OwnerApartmentController extends Controller
     public function uploadPhotos(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user || $user->account_type !== 'OWNER') {
+        if ($user->account_type !== 'OWNER') {
             return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
         }
 
@@ -511,10 +525,12 @@ class OwnerApartmentController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success($uploadedPhotos, 'Photos uploaded successfully.');
+            return ResponseHelper::success([
+                'photos' => ApartmentPhotoResource::collection($uploadedPhotos)
+            ], 'تم رفع الصور بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to upload photos: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في رفع الصور: ' . $e->getMessage(), 500);
         }
     }
 
@@ -549,8 +565,8 @@ class OwnerApartmentController extends Controller
     public function deletePhoto(Request $request, $id, $photoId)
     {
         $user = $request->user();
-        if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+        if ($user->account_type !== 'OWNER') {
+            return ResponseHelper::error('يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $apartment = Apartment::where('id', $id)
@@ -572,10 +588,10 @@ class OwnerApartmentController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success(null, 'Photo deleted successfully.');
+            return ResponseHelper::success(null, 'تم حذف الصورة بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to delete photo: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في حذف الصورة: ' . $e->getMessage(), 500);
         }
     }
 
@@ -610,8 +626,8 @@ class OwnerApartmentController extends Controller
     public function setCoverPhoto(Request $request, $id, $photoId)
     {
         $user = $request->user();
-        if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+        if ($user->account_type !== 'OWNER') {
+            return ResponseHelper::error('يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $apartment = Apartment::where('id', $id)
@@ -633,10 +649,12 @@ class OwnerApartmentController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success($photo, 'Cover photo updated successfully.');
+            return ResponseHelper::success([
+                'photo' => new ApartmentPhotoResource($photo)
+            ], 'تم تحديث صورة الغلاف بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to set cover photo: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في تعيين صورة الغلاف: ' . $e->getMessage(), 500);
         }
     }
 
@@ -671,7 +689,7 @@ class OwnerApartmentController extends Controller
     {
         $user = $request->user();
         if (!$user || $user->account_type !== 'OWNER') {
-            return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
+            return ResponseHelper::error('غير مصرح. يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
         $apartment = Apartment::where('id', $id)
@@ -685,8 +703,176 @@ class OwnerApartmentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success($bookings, 'Bookings retrieved successfully.');
+        // إضافة معلومات عن طلبات التغيير
+        $bookings->getCollection()->transform(function ($booking) {
+            $booking->has_change_request = !empty($booking->change_reason);
+            return $booking;
+        });
+
+        return ResponseHelper::success([
+            'bookings' => ReservationResource::collection($bookings)
+        ], 'تم جلب الحجوزات بنجاح.');
     }
 
-}
+    /**
+     * Approve booking
+     */
+    #[OA\Post(
+        path: "/owner/apartments/{id}/bookings/{bookingId}/approve",
+        summary: "Approve booking",
+        description: "Approve a pending booking for an apartment (OWNER account type required)",
+        tags: ["Owner"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "bookingId", in: "path", required: true, description: "Booking ID", schema: new OA\Schema(type: "integer")),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Booking approved successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Booking approved successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: "Booking cannot be approved"),
+            new OA\Response(response: 403, description: "Unauthorized"),
+            new OA\Response(response: 404, description: "Booking not found"),
+        ]
+    )]
+    public function approveBooking(Request $request, $id, $bookingId)
+    {
+        $owner = $request->user();
+        $apartment = Apartment::where('id', $id)
+            ->where('owner_id', $owner->id)
+            ->firstOrFail();
 
+        $booking = Booking::where('id', $bookingId)
+            ->where('apartment_id', $apartment->id)
+            ->firstOrFail();
+
+        if ($booking->status !== 'PENDING') {
+            return ResponseHelper::error('يمكن الموافقة على الحجوزات المعلقة فقط.', 400);
+        }
+
+        $renter = $booking->renter;
+
+        if ($renter->wallet_balance < $booking->total_price) {
+            return ResponseHelper::error('رصيد المستأجر غير كافٍ.', 400);
+            $booking->update([
+                'status' => 'REJECTED',
+            ]);
+
+            sendNotificationToUser($renter->id, 'تم رفض الحجز', 'تم رفض حجزك من قبل المالك.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $owner->wallet_balance += $booking->total_price;
+            $owner->save();
+
+            $renter->wallet_balance -= $booking->total_price;
+            $renter->save();
+
+            $booking->update([
+                'status' => 'CONFIRMED',
+            ]);
+
+            $booking->load(['apartment', 'renter']);
+
+            DB::commit();
+
+            sendNotificationToUser($renter->id, 'تم الموافقة على الحجز', 'تم الموافقة على حجزك من قبل المالك.');
+
+            return ResponseHelper::success(null, 'تم الموافقة على الحجز بنجاح.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::error('فشل في الموافقة على الحجز: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Reject booking
+     */
+    #[OA\Post(
+        path: "/owner/apartments/{id}/bookings/{bookingId}/reject",
+        summary: "Reject booking",
+        description: "Reject a pending booking for an apartment (OWNER account type required)",
+        tags: ["Owner"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "bookingId", in: "path", required: true, description: "Booking ID", schema: new OA\Schema(type: "integer")),
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "rejection_reason", type: "string", nullable: true, example: "Apartment not available"),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Booking rejected successfully",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "message", type: "string", example: "success"),
+                        new OA\Property(property: "data", type: "object"),
+                        new OA\Property(property: "body", type: "string", example: "Booking rejected successfully.")
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: "Booking cannot be rejected"),
+            new OA\Response(response: 403, description: "Unauthorized"),
+            new OA\Response(response: 404, description: "Booking not found"),
+        ]
+    )]
+    public function rejectBooking(Request $request, $id, $bookingId)
+    {
+        $user = $request->user();
+        if (!$user || $user->account_type !== 'OWNER') {
+            return ResponseHelper::error('غير مصرح. يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
+        }
+
+        $apartment = Apartment::where('id', $id)
+            ->where('owner_id', $user->id)
+            ->firstOrFail();
+
+        $booking = \App\Models\Booking::where('id', $bookingId)
+            ->where('apartment_id', $apartment->id)
+            ->firstOrFail();
+
+        if ($booking->status !== 'PENDING') {
+            return ResponseHelper::error('يمكن رفض الحجوزات المعلقة فقط.', 400);
+        }
+
+        $request->validate([
+            'rejection_reason' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $booking->update([
+                'status' => 'REJECTED',
+                'rejection_reason' => $request->rejection_reason,
+            ]);
+
+            $booking->load(['apartment', 'renter']);
+
+            DB::commit();
+
+            return ResponseHelper::success(null, 'تم رفض الحجز بنجاح.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::error('فشل في رفض الحجز: ' . $e->getMessage(), 500);
+        }
+    }
+}

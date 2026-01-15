@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('address_line');
             $table->decimal('rating_avg')->default(5);
             $table->boolean('is_active')->default(false);
-            $table->boolean('is_favorite')->default(false);
+            $table->boolean('is_recommended')->default(false);
             $table->timestamps();
         });
     }

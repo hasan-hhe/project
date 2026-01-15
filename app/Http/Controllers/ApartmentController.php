@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\ApartmentResource;
 use App\Http\Requests\IndexApartmentRequest;
+use App\Http\Resources\ReviewResource;
 use App\Models\Apartment;
 use App\Models\Review;
 use App\Models\Favorite;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
 class ApartmentController extends Controller
@@ -79,39 +81,79 @@ class ApartmentController extends Controller
         $perPage = min(max((int)($data['per_page'] ?? 10), 1), 50);
         $apartments = $query->paginate($perPage);
 
-        return ResponseHelper::success(ApartmentResource::collection($apartments), 'Apartments retrieved successfully.');
+        return ResponseHelper::success([
+            'apartments' => ApartmentResource::collection($apartments)
+        ], 'تم جلب الشقق بنجاح.');
     }
 
     #[OA\Get(
-        path: "/apartments/{id}",
-        summary: "Get apartment by ID",
-        description: "Retrieve detailed information about a specific apartment",
+        path: "/apartments/price-range",
+        summary: "Get apartment price range",
+        description: "Get minimum and maximum prices of all apartments",
         tags: ["Apartments"],
         security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-        ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: "Apartment retrieved successfully",
+                description: "Price range retrieved successfully",
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Apartment retrieved successfully.")
+                        new OA\Property(
+                            property: "data",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "min_price", type: "number", format: "float", example: 10000),
+                                new OA\Property(property: "max_price", type: "number", format: "float", example: 100000),
+                            ]
+                        ),
+                        new OA\Property(property: "body", type: "string", example: "Price range retrieved successfully.")
                     ]
                 )
             ),
-            new OA\Response(response: 404, description: "Apartment not found"),
         ]
     )]
-    public function show(Request $request, $id)
+    public function getPriceRange(Request $request)
     {
-        $apartment = Apartment::with(['owner', 'city', 'governorate', 'photos', 'reviews.user', 'favorites'])
-            ->findOrFail($id);
-        return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
+        $minPrice = Apartment::min('price') ?? 0;
+        $maxPrice = Apartment::max('price') ?? 0;
+
+        return ResponseHelper::success([
+            'min_price' => (float)$minPrice,
+            'max_price' => (float)$maxPrice,
+        ], 'تم جلب نطاق الأسعار بنجاح.');
     }
+
+    // #[OA\Get(
+    //     path: "/apartments/{id}",
+    //     summary: "Get apartment by ID",
+    //     description: "Retrieve detailed information about a specific apartment",
+    //     tags: ["Apartments"],
+    //     security: [["bearerAuth" => []]],
+    //     parameters: [
+    //         new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
+    //     ],
+    //     responses: [
+    //         new OA\Response(
+    //             response: 200,
+    //             description: "Apartment retrieved successfully",
+    //             content: new OA\JsonContent(
+    //                 properties: [
+    //                     new OA\Property(property: "message", type: "string", example: "success"),
+    //                     new OA\Property(property: "data", type: "object"),
+    //                     new OA\Property(property: "body", type: "string", example: "Apartment retrieved successfully.")
+    //                 ]
+    //             )
+    //         ),
+    //         new OA\Response(response: 404, description: "Apartment not found"),
+    //     ]
+    // )]
+    // public function show(Request $request, $id)
+    // {
+    //     $apartment = Apartment::with(['owner', 'city', 'governorate', 'photos', 'reviews.user', 'favorites'])
+    //         ->findOrFail($id);
+    //     return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
+    // }
 
     #[OA\Get(
         path: "/apartments/favorites",
@@ -140,7 +182,7 @@ class ApartmentController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
@@ -150,7 +192,9 @@ class ApartmentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success(ApartmentResource::collection($favoriteApartments), 'Favorite apartments retrieved successfully.');
+        return ResponseHelper::success([
+            'favorite_apartments' => ApartmentResource::collection($favoriteApartments)
+        ], 'تم جلب الشقق المفضلة بنجاح.');
     }
 
     #[OA\Post(
@@ -186,9 +230,6 @@ class ApartmentController extends Controller
     public function toggleFavorite(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
         $apartment = Apartment::findOrFail($id);
 
@@ -210,7 +251,7 @@ class ApartmentController extends Controller
 
         return ResponseHelper::success([
             'is_favorite' => $isFavorite,
-        ], 'Favorite status updated successfully.');
+        ], 'تم تحديث حالة المفضلة بنجاح.');
     }
 
     #[OA\Get(
@@ -239,7 +280,6 @@ class ApartmentController extends Controller
     )]
     public function getReviews(Request $request, $id)
     {
-        $apartment = Apartment::findOrFail($id);
         $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
 
         $reviews = Review::where('apartment_id', $id)
@@ -247,7 +287,9 @@ class ApartmentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success($reviews, 'Reviews retrieved successfully.');
+        return ResponseHelper::success([
+            'reviews' => ReviewResource::collection($reviews),
+        ], 'تم جلب التقييمات بنجاح.');
     }
 
     #[OA\Post(
@@ -289,7 +331,7 @@ class ApartmentController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $request->validate([
@@ -298,18 +340,39 @@ class ApartmentController extends Controller
             'booking_id' => 'nullable|exists:bookings,id',
         ]);
 
+        // if ($request->booking_id == null) {
+        //     return ResponseHelper::error('لا يمكنك تقييم الشقة بدون حجز.', 400);
+        // }
+
         $apartment = Apartment::findOrFail($id);
 
-        $review = Review::create([
-            'apartment_id' => $id,
-            'user_id' => $user->id,
-            'booking_id' => $request->booking_id,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
-        ]);
+        try {
+            DB::beginTransaction();
 
-        $review->load('user');
+            $review = Review::create([
+                'apartment_id' => $id,
+                'user_id' => $user->id,
+                'booking_id' => $request->booking_id,
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+            ]);
 
-        return ResponseHelper::success($review, 'Review added successfully.');
+            // إعادة حساب متوسط التقييمات للشقة
+            $averageRating = $apartment->reviews()->avg('rating');
+            $apartment->update([
+                'rating_avg' => round($averageRating, 2)
+            ]);
+
+            DB::commit();
+
+            $review->load('user');
+
+            return ResponseHelper::success([
+                'review' => new ReviewResource($review)
+            ], 'تم إضافة التقييم بنجاح.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::error('فشل في إضافة التقييم: ' . $e->getMessage(), 500);
+        }
     }
 }

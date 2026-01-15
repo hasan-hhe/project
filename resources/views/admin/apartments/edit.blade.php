@@ -115,7 +115,7 @@
                                     ])
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     @include('admin.components.select', [
                                         'selectedId' => 'is_active',
                                         'label' => 'الحالة',
@@ -127,6 +127,22 @@
                                         'attr' => 'id',
                                         'valueSelected' => old('is_active', $apartment->is_active),
                                         'nameForm' => 'is_active',
+                                        'withSearch' => false,
+                                    ])
+                                </div>
+
+                                <div class="col-md-6">
+                                    @include('admin.components.select', [
+                                        'selectedId' => 'is_recommended',
+                                        'label' => 'موصى بها',
+                                        'items' => [
+                                            (object) ['id' => 1, 'name' => 'نعم'],
+                                            (object) ['id' => 0, 'name' => 'لا'],
+                                        ],
+                                        'name' => 'name',
+                                        'attr' => 'id',
+                                        'valueSelected' => old('is_recommended', $apartment->is_recommended),
+                                        'nameForm' => 'is_recommended',
                                         'withSearch' => false,
                                     ])
                                 </div>

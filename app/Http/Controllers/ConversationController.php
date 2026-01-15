@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Events\MessageSent;
+use App\Http\Resources\ConversationResource;
 use App\Http\Resources\MesssageResource;
 use App\Models\Conversation;
 use App\Models\Message;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
@@ -42,10 +44,7 @@ class ConversationController extends Controller
     )]
     public function index(Request $request)
     {
-        $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
+        $user = Auth::user();
 
         $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
 
@@ -59,7 +58,9 @@ class ConversationController extends Controller
             ->orderBy('updated_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success($conversations, 'Conversations retrieved successfully.');
+        return ResponseHelper::success([
+            'conversations' => ConversationResource::collection($conversations)
+        ], 'تم جلب المحادثات بنجاح.');
     }
 
     #[OA\Get(
@@ -89,9 +90,6 @@ class ConversationController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
         $conversation = Conversation::where(function ($query) use ($user) {
             $query->where('owner_id', $user->id)
@@ -101,7 +99,9 @@ class ConversationController extends Controller
             ->with(['owner', 'renter', 'apartment'])
             ->firstOrFail();
 
-        return ResponseHelper::success($conversation, 'Conversation retrieved successfully.');
+        return ResponseHelper::success([
+            'conversation' => new ConversationResource($conversation)
+        ], 'تم جلب المحادثة بنجاح.');
     }
 
     #[OA\Post(
@@ -138,13 +138,10 @@ class ConversationController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
         $request->validate([
             'owner_id' => 'required|exists:users,id',
-            'apartment_id' => 'nullable|exists:apartments,id',
+            'apartment_id' => 'required|exists:apartments,id',
         ]);
 
         // Check if conversation already exists
@@ -161,7 +158,9 @@ class ConversationController extends Controller
 
         if ($existingConversation) {
             $existingConversation->load(['owner', 'renter', 'apartment']);
-            return ResponseHelper::success($existingConversation, 'Conversation already exists.');
+            return ResponseHelper::success([
+                'conversation' => new ConversationResource($existingConversation)
+            ], 'المحادثة موجودة بالفعل.');
         }
 
         try {
@@ -177,10 +176,12 @@ class ConversationController extends Controller
 
             DB::commit();
 
-            return ResponseHelper::success($conversation, 'Conversation created successfully.');
+            return ResponseHelper::success([
+                'conversation' => new ConversationResource($conversation)
+            ], 'تم إنشاء المحادثة بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to create conversation: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في إنشاء المحادثة: ' . $e->getMessage(), 500);
         }
     }
 
@@ -212,7 +213,7 @@ class ConversationController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $conversation = Conversation::where(function ($query) use ($user) {
@@ -229,7 +230,9 @@ class ConversationController extends Controller
             ->orderBy('created_at', 'asc')
             ->paginate($perPage);
 
-        return ResponseHelper::success($messages, 'Messages retrieved successfully.');
+        return ResponseHelper::success([
+            'messages' => MesssageResource::collection($messages)
+        ], 'تم جلب الرسائل بنجاح.');
     }
 
     #[OA\Post(
@@ -270,7 +273,7 @@ class ConversationController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $conversation = Conversation::where(function ($query) use ($user) {
@@ -301,13 +304,14 @@ class ConversationController extends Controller
 
             DB::commit();
 
-            // إرسال الرسالة عبر Laravel Reverb
-            broadcast(new MessageSent($message, $id))->toOthers();
+            broadcast(new MessageSent($message, $id));
 
-            return ResponseHelper::success($message, 'Message sent successfully.');
+            return ResponseHelper::success([
+                'message' => new MesssageResource($message)
+            ], 'تم إرسال الرسالة بنجاح.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ResponseHelper::error('Failed to send message: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في إرسال الرسالة: ' . $e->getMessage(), 500);
         }
     }
 
@@ -338,7 +342,7 @@ class ConversationController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
+            return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
         $conversation = Conversation::where(function ($query) use ($user) {
@@ -354,9 +358,9 @@ class ConversationController extends Controller
                 ->whereNull('read_at')
                 ->update(['read_at' => now()]);
 
-            return ResponseHelper::success(null, 'Messages marked as read.');
+            return ResponseHelper::success(null, 'تم تحديد الرسائل كمقروءة.');
         } catch (\Exception $e) {
-            return ResponseHelper::error('Failed to mark messages as read: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في تحديد الرسائل كمقروءة: ' . $e->getMessage(), 500);
         }
     }
 
@@ -400,7 +404,7 @@ class ConversationController extends Controller
                 'conversation_id' => 'required|exists:conversations,id'
             ]);
         } catch (Exception $e) {
-            return ResponseHelper::error('Failed to delete conversation: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في حذف المحادثة: ' . $e->getMessage(), 500);
         }
         $user = $request->user();
         $conversationId = $request->conversation_id;
@@ -408,14 +412,14 @@ class ConversationController extends Controller
         $conversation = Conversation::findOrFail($conversationId);
 
         if ($conversation->renter_id != $user->id && $conversation->owner_id != $user->id) {
-            return ResponseHelper::error('you are not practice in this conversation!', 403);
+            return ResponseHelper::error('أنت لست مشاركاً في هذه المحادثة!', 403);
         }
 
         Message::where('conversation_id', $conversationId)->delete();
 
         $conversation->delete();
 
-        return ResponseHelper::success(null, 'Conversation deleted successfully.');
+        return ResponseHelper::success(null, 'تم حذف المحادثة بنجاح.');
     }
 
     #[OA\Post(
@@ -458,14 +462,15 @@ class ConversationController extends Controller
                 'message_id' => 'required|exists:messages,id'
             ]);
         } catch (Exception $e) {
-            return ResponseHelper::error('Failed to delete message: ' . $e->getMessage(), 500);
+            return ResponseHelper::error($e->getMessage(), 422);
         }
+
         $user = $request->user();
         $messageId = $request->message_id;
         $message = Message::findOrFail($messageId);
 
         if ($message->sender_id != $user->id) {
-            return ResponseHelper::error('you can delete your message only!', 403);
+            return ResponseHelper::error('يمكنك حذف رسائلك فقط!', 403);
         }
 
         $attachment = $message->attachment_url;
@@ -474,7 +479,7 @@ class ConversationController extends Controller
 
         $message->delete();
 
-        return ResponseHelper::success(null, 'Message deleted successfully.');
+        return ResponseHelper::success(null, 'تم حذف الرسالة بنجاح.');
     }
 
     #[OA\Post(
@@ -524,7 +529,7 @@ class ConversationController extends Controller
                 'attachment' => 'nullable'
             ]);
         } catch (Exception $e) {
-            return ResponseHelper::error('Failed to update message: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في تحديث الرسالة: ' . $e->getMessage(), 500);
         }
 
         $user = $request->user();
@@ -532,7 +537,7 @@ class ConversationController extends Controller
         $message = Message::findOrFail($messageId);
 
         if ($message->sender_id != $user->id) {
-            return ResponseHelper::error('you can update your message only!', 403);
+            return ResponseHelper::error('يمكنك تحديث رسائلك فقط!', 403);
         }
 
         $attachment = $message->attachment_url;
@@ -551,7 +556,9 @@ class ConversationController extends Controller
             'read_at' => null
         ]);
 
-        return ResponseHelper::success(new MesssageResource($message), 'Message updated successfully.');
+        return ResponseHelper::success([
+            'message' => new MesssageResource($message)
+        ], 'تم تحديث الرسالة بنجاح.');
     }
 
     #[OA\Post(
@@ -586,6 +593,7 @@ class ConversationController extends Controller
             new OA\Response(response: 500, description: "Server error"),
         ]
     )]
+
     public function messageInfo(Request $request)
     {
         try {
@@ -593,11 +601,13 @@ class ConversationController extends Controller
                 'message_id' => 'required|exists:messages,id'
             ]);
         } catch (Exception $e) {
-            return ResponseHelper::error('Failed to get message info: ' . $e->getMessage(), 500);
+            return ResponseHelper::error('فشل في جلب معلومات الرسالة: ' . $e->getMessage(), 500);
         }
 
         $message = Message::findorFail($request->message_id);
 
-        return ResponseHelper::success(new MesssageResource($message), 'Message info retrieved successfully.');
+        return ResponseHelper::success([
+            'message' => new MesssageResource($message)
+        ], 'تم جلب معلومات الرسالة بنجاح.');
     }
 }

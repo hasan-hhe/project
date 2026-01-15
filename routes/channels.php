@@ -6,6 +6,11 @@ Broadcast::channel('user.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
 
+Broadcast::channel('private-user.{userId}', function ($user, $userId) {
+    // التحقق من أن المستخدم المصدق عليه هو نفسه المستخدم في القناة
+    return (int) $user->id === (int) $userId;
+});
+
 Broadcast::channel('notifications', function ($user) {
     return ['id' => $user->id, 'name' => $user->first_name . ' ' . $user->last_name];
 });

@@ -106,6 +106,28 @@
                         <p>شحن محفظة المستأجرين</p>
                     </a>
                 </li>
+                <li class="nav-item
+                    {{ Route::is('admin.governorates.*') ? 'active' : '' }}">
+                    <a data-bs-toggle="collapse" href="#locationsCollapse">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <p>المواقع</p>
+                        <span class="caret"></span>
+                    </a>
+                    <div class="collapse" id="locationsCollapse">
+                        <ul class="nav nav-collapse">
+                            <li class="{{ Route::is('admin.governorates.*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.governorates.index') }}">
+                                    <span class="sub-item">المحافظات</span>
+                                </a>
+                            </li>
+                            <li class="{{ Route::is('admin.cities.*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.cities.index') }}">
+                                    <span class="sub-item">المدن</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
             </ul>
 
         </div>

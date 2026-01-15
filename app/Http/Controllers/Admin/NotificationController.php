@@ -20,19 +20,8 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        if (request('type') == 'dashboard') {
-            $userNotifications = UserNotification::where('user_id', Auth::id())
-                ->get();
-            $notifications = Notification::whereIn('id', $userNotifications->map->notification_id)
-                ->orderBy('id', 'DESC')
-                ->get();
-        } else {
-            $userNotifications = UserNotification::where('user_id', '!=', Auth::id())
-                ->get();
-            $notifications = Notification::whereIn('id', $userNotifications->map->notification_id)
-                ->orderBy('id', 'DESC')
-                ->get();
-        }
+        $notifications = Notification::orderBy('id', 'DESC')
+            ->get();
         return view('admin.notifications.index', compact('notifications'));
     }
 
@@ -41,7 +30,7 @@ class NotificationController extends Controller
      */
     public function create()
     {
-        $users = User::orderBy('id', 'DESC')->get();
+        $users = User::orderBy('id', 'DESC')->where('account_type', '!=', 'ADMIN')->get();
         return view('admin.notifications.create', compact('users'));
     }
 
@@ -56,11 +45,14 @@ class NotificationController extends Controller
             $notification = Notification::create([
                 'title' => $request->input('title'),
                 'body' => $request->input('body'),
-                'is_active' => $request->input('isActive')
+                'is_active' => $request->input('is_active')
             ]);
 
-            if ($request->has('users')) {
-                foreach ($request->input('users') as $userId) {
+            // تحديث الـ notification للحصول على أحدث البيانات (خاصة created_at)
+            $notification->refresh();
+
+            if ($request->has('items')) {
+                foreach ($request->input('items') as $userId) {
                     $userNotification = UserNotification::create([
                         'user_id' => $userId,
                         'notification_id' => $notification->id,
@@ -169,7 +161,7 @@ class NotificationController extends Controller
         if (!$notification) {
             return redirect()->back()->with('error', 'الإشعار غير موجود');
         }
-        $users = User::all();
+        $users = User::where('account_type', '!=', 'ADMIN')->get();
         return view('admin.notifications.edit', compact('notification', 'users'));
     }
 
@@ -187,7 +179,7 @@ class NotificationController extends Controller
             $notification->update([
                 'title' => $request->input('title'),
                 'body' => $request->input('body'),
-                'is_active' => $request->input('isActive'),
+                'is_active' => $request->input('is_active'),
             ]);
             if ($request->has('users')) {
                 // حذف المستخدمين الذين تم إزالتهم

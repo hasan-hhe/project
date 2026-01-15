@@ -97,7 +97,7 @@ class ApartmentController extends Controller
                 'address_line' => $request->address_line,
                 'rating_avg' => 5.0,
                 'is_active' => $request->has('is_active') ? 1 : 0,
-                'is_favorite' => false,
+                'is_recommended' => $request->has('is_recommended') ? 1 : 0,
             ]);
 
             DB::commit();
@@ -153,6 +153,7 @@ class ApartmentController extends Controller
             'rooms_count' => 'required|integer|min:1',
             'address_line' => 'required|string|max:255',
             'is_active' => 'nullable|boolean',
+            'is_recommended' => 'nullable|boolean',
         ]);
 
         try {
@@ -168,6 +169,7 @@ class ApartmentController extends Controller
                 'rooms_count' => $request->rooms_count,
                 'address_line' => $request->address_line,
                 'is_active' => $request->has('is_active') ? 1 : 0,
+                'is_recommended' => $request->has('is_recommended') ? 1 : 0,
             ]);
 
             DB::commit();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\NotificationResource;
 use App\Models\UserNotification;
 use App\Models\Notification;
 use Illuminate\Http\Request;
@@ -36,9 +37,6 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
         $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
 
@@ -47,7 +45,9 @@ class NotificationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success($notifications, 'Notifications retrieved successfully.');
+        return ResponseHelper::success([
+            'notifications' => NotificationResource::collection($notifications)
+        ], 'تم جلب الإشعارات بنجاح.');
     }
 
     #[OA\Post(
@@ -76,11 +76,8 @@ class NotificationController extends Controller
     public function markAsSeen(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
-        $userNotification = UserNotification::where('id', $id)
+        $userNotification = UserNotification::where('notification_id', $id)
             ->where('user_id', $user->id)
             ->firstOrFail();
 
@@ -88,7 +85,7 @@ class NotificationController extends Controller
             'is_seen' => true,
         ]);
 
-        return ResponseHelper::success($userNotification, 'Notification marked as seen.');
+        return ResponseHelper::success(null, 'تم تحديد الإشعار كمقروء.');
     }
 
     #[OA\Get(
@@ -120,9 +117,6 @@ class NotificationController extends Controller
     public function getUnreadCount(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
 
         $count = UserNotification::where('user_id', $user->id)
             ->where('is_seen', false)
@@ -131,7 +125,7 @@ class NotificationController extends Controller
 
         return ResponseHelper::success([
             'unread_count' => $count,
-        ], 'Unread count retrieved successfully.');
+        ], 'تم جلب عدد الإشعارات غير المقروءة بنجاح.');
     }
 
     #[OA\Get(
@@ -161,25 +155,20 @@ class NotificationController extends Controller
     public function getUserNotifications(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthenticated.', 401);
-        }
-
         $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
         $onlyUnread = $request->boolean('only_unread', false);
 
         $query = UserNotification::where('user_id', $user->id)
             ->where('is_active', true)
-            ->with('notification');
+            ->where('is_seen', $onlyUnread)
+            ->pluck('notification_id');
 
-        if ($onlyUnread) {
-            $query->where('is_seen', false);
-        }
-
-        $notifications = $query->orderBy('created_at', 'desc')
+        $notifications = Notification::whereIn('id', $query)
+            ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return ResponseHelper::success($notifications, 'Notifications retrieved successfully.');
+        return ResponseHelper::success([
+            'notifications' => NotificationResource::collection($notifications)
+        ], 'تم جلب الإشعارات بنجاح.');
     }
 }
-

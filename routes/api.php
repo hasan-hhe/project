@@ -2,7 +2,7 @@
 
 use App\Http\Middleware\checktoken;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SignupController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\BookingController;
@@ -12,8 +12,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OwnerApartmentController;
 
 Route::prefix("auth")->group(function () {
-    Route::post('/register', [SignupController::class, "register"]);
-    Route::post('/login', [SignupController::class, "login"]);
+    Route::post('/register', [AuthController::class, "register"]);
+    Route::post('/login', [AuthController::class, "login"]);
 });
 
 // Public Location APIs (no authentication required)
@@ -26,25 +26,29 @@ Route::get('/cities/{id}', [LocationController::class, 'getCity']);
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
-    Route::prefix("conversation")->group(function () {
-        Route::get('/my-conversations', [ConversationController::class, 'index']);
-        Route::post('/messages', [ConversationController::class, 'getMessages']);
-        Route::post('/create', [ConversationController::class, 'renterStartConversation']);
-        Route::post('/send-message', [ConversationController::class, 'sendMessage']);
+    // Conversations APIs
+    Route::prefix("conversations")->group(function () {
+        Route::get('/', [ConversationController::class, 'index']);
+        Route::post('/', [ConversationController::class, 'store']);
+        Route::get('/{id}', [ConversationController::class, 'show']);
         Route::post('/delete', [ConversationController::class, 'deleteConversation']);
+        Route::post('/{id}/mark-read', [ConversationController::class, 'markAsRead']);
+
+        Route::get('/{id}/messages', [ConversationController::class, 'getMessages']);
+        Route::post('/{id}/messages', [ConversationController::class, 'sendMessage']);
         Route::post('/delete-message', [ConversationController::class, 'deleteMessage']);
         Route::post('/update-message', [ConversationController::class, 'updateMessage']);
         Route::post('/message-info', [ConversationController::class, 'messageInfo']);
     });
 
     Route::get('/my-profile', [ProfileController::class, 'show']);
-    Route::post('/logout', [SignupController::class, 'logout']);
-    Route::get('/avatar-image', [ProfileController::class, 'getAvatar']);
-    Route::get('/identity-document-image', [ProfileController::class, 'getIdentityDocument']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
     Route::post('/update-profile-info', [ProfileController::class, 'update']);
 
     // Apartments APIs
     Route::get('/apartments', [ApartmentController::class, 'index'])->name('getApar');
+    Route::get('/apartments/price-range', [ApartmentController::class, 'getPriceRange']);
     Route::get('/apartments/favorites', [ApartmentController::class, 'getFavoriteApartments'])->name('getFavoriteApar');
     Route::get('/apartments/{id}', [ApartmentController::class, 'show'])->name('getAparById');
     Route::post('/apartments/{id}/toggle-favorite', [ApartmentController::class, 'toggleFavorite']);
@@ -58,14 +62,6 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/reservations/{id}/update', [BookingController::class, 'update']);
     Route::post('/reservations/{id}/cancel', [BookingController::class, 'cancel']);
     Route::post('/reservations/{id}/delete', [BookingController::class, 'destroy']);
-
-    // Conversations APIs
-    Route::get('/conversations', [ConversationController::class, 'index']);
-    Route::get('/conversations/{id}', [ConversationController::class, 'show']);
-    Route::post('/conversations', [ConversationController::class, 'store']);
-    Route::get('/conversations/{id}/messages', [ConversationController::class, 'getMessages']);
-    Route::post('/conversations/{id}/messages', [ConversationController::class, 'sendMessage']);
-    Route::post('/conversations/{id}/mark-read', [ConversationController::class, 'markAsRead']);
 
     // Notifications APIs
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -86,5 +82,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::delete('/apartments/{id}/photos/{photoId}', [OwnerApartmentController::class, 'deletePhoto']);
         Route::post('/apartments/{id}/photos/{photoId}/set-cover', [OwnerApartmentController::class, 'setCoverPhoto']);
         Route::get('/apartments/{id}/bookings', [OwnerApartmentController::class, 'getBookings']);
+        Route::post('/apartments/{id}/bookings/{bookingId}/approve', [OwnerApartmentController::class, 'approveBooking']);
+        Route::post('/apartments/{id}/bookings/{bookingId}/reject', [OwnerApartmentController::class, 'rejectBooking']);
     });
 });
