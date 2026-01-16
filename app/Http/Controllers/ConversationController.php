@@ -19,34 +19,12 @@ use function App\Helpers\uploadImage;
 
 class ConversationController extends Controller
 {
-    #[OA\Get(
-        path: "/conversations",
-        summary: "Get all conversations",
-        description: "Retrieve all conversations for the authenticated user",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", minimum: 1, maximum: 50, default: 10)),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Conversations retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Conversations retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
+    #[OA\Get(path: "/conversations", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function index(Request $request)
     {
         $user = Auth::user();
-
-        $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
+        $perPage = $request->get('per_page', 10);
+        $perPage = max(1, min(50, (int)$perPage));
 
         $conversations = Conversation::where(function ($query) use ($user) {
             $query->where('owner_id', $user->id)
@@ -63,30 +41,7 @@ class ConversationController extends Controller
         ], 'تم جلب المحادثات بنجاح.');
     }
 
-    #[OA\Get(
-        path: "/conversations/{id}",
-        summary: "Get conversation by ID",
-        description: "Retrieve detailed information about a specific conversation",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Conversation retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Conversation retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "Conversation not found"),
-        ]
-    )]
+    #[OA\Get(path: "/conversations/{id}", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function show(Request $request, $id)
     {
         $user = $request->user();
@@ -104,47 +59,20 @@ class ConversationController extends Controller
         ], 'تم جلب المحادثة بنجاح.');
     }
 
-    #[OA\Post(
-        path: "/conversations",
-        summary: "Create new conversation",
-        description: "Create a new conversation between renter and apartment owner",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["owner_id", "apartment_id"],
-                properties: [
-                    new OA\Property(property: "owner_id", type: "integer", example: 2, description: "Apartment owner ID"),
-                    new OA\Property(property: "apartment_id", type: "integer", example: 1, description: "Apartment ID"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Conversation created successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Conversation created successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 422, description: "Validation error"),
-        ]
-    )]
+    #[OA\Post(path: "/conversations", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function store(Request $request)
     {
         $user = $request->user();
 
-        $request->validate([
-            'owner_id' => 'required|exists:users,id',
-            'apartment_id' => 'required|exists:apartments,id',
-        ]);
+        try {
+            $request->validate([
+                'owner_id' => 'required|exists:users,id',
+                'apartment_id' => 'required|exists:apartments,id',
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
-        // Check if conversation already exists
         $existingConversation = Conversation::where(function ($query) use ($user, $request) {
             $query->where(function ($q) use ($user, $request) {
                 $q->where('owner_id', $request->owner_id)
@@ -185,30 +113,7 @@ class ConversationController extends Controller
         }
     }
 
-    #[OA\Get(
-        path: "/conversations/{id}/messages",
-        summary: "Get conversation messages",
-        description: "Retrieve all messages in a conversation",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
-            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", minimum: 1, maximum: 50, default: 20)),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Messages retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Messages retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
+    #[OA\Get(path: "/conversations/{id}/messages", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function getMessages(Request $request, $id)
     {
         $user = $request->user();
@@ -223,7 +128,8 @@ class ConversationController extends Controller
             ->where('id', $id)
             ->firstOrFail();
 
-        $perPage = min(max((int)$request->integer('per_page', 20), 1), 50);
+        $perPage = $request->get('per_page', 20);
+        $perPage = max(1, min(50, (int)$perPage));
 
         $messages = Message::where('conversation_id', $id)
             ->with('sender')
@@ -235,40 +141,7 @@ class ConversationController extends Controller
         ], 'تم جلب الرسائل بنجاح.');
     }
 
-    #[OA\Post(
-        path: "/conversations/{id}/messages",
-        summary: "Send message",
-        description: "Send a message in a conversation (real-time via Reverb)",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["content"],
-                properties: [
-                    new OA\Property(property: "content", type: "string", maxLength: 1000, example: "Hello, is this apartment available?"),
-                    new OA\Property(property: "attachment_url", type: "string", format: "url", nullable: true, example: "https://example.com/file.pdf"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Message sent successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Message sent successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 422, description: "Validation error"),
-        ]
-    )]
+    #[OA\Post(path: "/conversations/{id}/messages", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function sendMessage(Request $request, $id)
     {
         $user = $request->user();
@@ -283,10 +156,14 @@ class ConversationController extends Controller
             ->where('id', $id)
             ->firstOrFail();
 
-        $request->validate([
-            'content' => 'required|string|max:1000',
-            'attachment_url' => 'nullable|url',
-        ]);
+        try {
+            $request->validate([
+                'content' => 'required|string|max:1000',
+                'attachment_url' => 'nullable|url',
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -298,7 +175,7 @@ class ConversationController extends Controller
                 'attachment_url' => $request->attachment_url,
             ]);
 
-            $conversation->touch(); // Update updated_at
+            $conversation->touch();
 
             $message->load('sender');
 
@@ -315,29 +192,7 @@ class ConversationController extends Controller
         }
     }
 
-    #[OA\Post(
-        path: "/conversations/{id}/mark-read",
-        summary: "Mark messages as read",
-        description: "Mark all unread messages in a conversation as read",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Conversation ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Messages marked as read successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Messages marked as read successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
+    #[OA\Post(path: "/conversations/{id}/mark-read", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function markAsRead(Request $request, $id)
     {
         $user = $request->user();
@@ -364,39 +219,7 @@ class ConversationController extends Controller
         }
     }
 
-    #[OA\Post(
-        path: "/conversations/delete",
-        summary: "Delete conversation",
-        description: "Delete a conversation and all its messages. Only participants (owner or renter) can delete the conversation.",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["conversation_id"],
-                properties: [
-                    new OA\Property(property: "conversation_id", type: "integer", example: 1, description: "Conversation ID to delete"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Conversation deleted successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object", nullable: true),
-                        new OA\Property(property: "body", type: "string", example: "Conversation deleted successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: "Forbidden - User is not a participant"),
-            new OA\Response(response: 404, description: "Conversation not found"),
-            new OA\Response(response: 422, description: "Validation error"),
-            new OA\Response(response: 500, description: "Server error"),
-        ]
-    )]
+    #[OA\Post(path: "/conversations/delete", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function deleteConversation(Request $request)
     {
         try {
@@ -404,7 +227,7 @@ class ConversationController extends Controller
                 'conversation_id' => 'required|exists:conversations,id'
             ]);
         } catch (Exception $e) {
-            return ResponseHelper::error('فشل في حذف المحادثة: ' . $e->getMessage(), 500);
+            return ResponseHelper::error($e->getMessage(), 422);
         }
         $user = $request->user();
         $conversationId = $request->conversation_id;
@@ -422,39 +245,7 @@ class ConversationController extends Controller
         return ResponseHelper::success(null, 'تم حذف المحادثة بنجاح.');
     }
 
-    #[OA\Post(
-        path: "/conversations/delete-message",
-        summary: "Delete message",
-        description: "Delete a message. Only the message sender can delete their own message. Attachment files are also deleted.",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["message_id"],
-                properties: [
-                    new OA\Property(property: "message_id", type: "integer", example: 1, description: "Message ID to delete"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Message deleted successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object", nullable: true),
-                        new OA\Property(property: "body", type: "string", example: "Message deleted successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: "Forbidden - User can only delete their own messages"),
-            new OA\Response(response: 404, description: "Message not found"),
-            new OA\Response(response: 422, description: "Validation error"),
-            new OA\Response(response: 500, description: "Server error"),
-        ]
-    )]
+    #[OA\Post(path: "/conversations/delete-message", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function deleteMessage(Request $request)
     {
         try {
@@ -482,44 +273,7 @@ class ConversationController extends Controller
         return ResponseHelper::success(null, 'تم حذف الرسالة بنجاح.');
     }
 
-    #[OA\Post(
-        path: "/conversations/update-message",
-        summary: "Update message",
-        description: "Update a message content and/or attachment. Only the message sender can update their own message. Old attachment is deleted if a new one is provided.",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    required: ["message_id", "content"],
-                    properties: [
-                        new OA\Property(property: "message_id", type: "integer", example: 1, description: "Message ID to update"),
-                        new OA\Property(property: "content", type: "string", example: "Updated message content", description: "New message content"),
-                        new OA\Property(property: "attachment", type: "string", format: "binary", nullable: true, description: "New attachment file (optional)"),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Message updated successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Message updated successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: "Forbidden - User can only update their own messages"),
-            new OA\Response(response: 404, description: "Message not found"),
-            new OA\Response(response: 422, description: "Validation error"),
-            new OA\Response(response: 500, description: "Server error"),
-        ]
-    )]
+    #[OA\Post(path: "/conversations/update-message", tags: ["Conversations"], security: [["bearerAuth" => []]])]
     public function updateMessage(Request $request)
     {
         try {
@@ -529,7 +283,7 @@ class ConversationController extends Controller
                 'attachment' => 'nullable'
             ]);
         } catch (Exception $e) {
-            return ResponseHelper::error('فشل في تحديث الرسالة: ' . $e->getMessage(), 500);
+            return ResponseHelper::error($e->getMessage(), 422);
         }
 
         $user = $request->user();
@@ -561,38 +315,8 @@ class ConversationController extends Controller
         ], 'تم تحديث الرسالة بنجاح.');
     }
 
-    #[OA\Post(
-        path: "/conversations/message-info",
-        summary: "Get message information",
-        description: "Retrieve detailed information about a specific message",
-        tags: ["Conversations"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["message_id"],
-                properties: [
-                    new OA\Property(property: "message_id", type: "integer", example: 1, description: "Message ID"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Message information retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Message info retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "Message not found"),
-            new OA\Response(response: 422, description: "Validation error"),
-            new OA\Response(response: 500, description: "Server error"),
-        ]
-    )]
+    #[OA\Post(path: "/conversations/message-info", tags: ["Conversations"], security: [["bearerAuth" => []]])]
+
 
     public function messageInfo(Request $request)
     {
@@ -601,7 +325,7 @@ class ConversationController extends Controller
                 'message_id' => 'required|exists:messages,id'
             ]);
         } catch (Exception $e) {
-            return ResponseHelper::error('فشل في جلب معلومات الرسالة: ' . $e->getMessage(), 500);
+            return ResponseHelper::error($e->getMessage(), 422);
         }
 
         $message = Message::findorFail($request->message_id);

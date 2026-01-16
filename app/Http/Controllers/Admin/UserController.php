@@ -169,7 +169,6 @@ class UserController extends Controller
             ];
 
             if ($request->hasFile('avatar_image')) {
-                // حذف الصورة القديمة إن وجدت
                 if ($user->avatar_url && Storage::disk('public')->exists($user->avatar_url)) {
                     Storage::disk('public')->delete($user->avatar_url);
                 }
@@ -177,7 +176,6 @@ class UserController extends Controller
             }
 
             if ($request->hasFile('identity_document_image')) {
-                // حذف الصورة القديمة إن وجدت
                 if ($user->identity_document_url && Storage::disk('public')->exists($user->identity_document_url)) {
                     Storage::disk('public')->delete($user->identity_document_url);
                 }
@@ -216,7 +214,6 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         try {
-            // التحقق من وجود حجوزات أو شقق مرتبطة
             if ($user->account_type == 'OWNER') {
                 $apartmentsCount = $user->appartments()->count();
                 if ($apartmentsCount > 0) {
@@ -270,7 +267,6 @@ class UserController extends Controller
                     continue;
                 }
 
-                // التحقق من وجود حجوزات أو شقق مرتبطة
                 if ($user->account_type == 'OWNER' && $user->appartments()->count() > 0) {
                     DB::rollBack();
                     return redirect()

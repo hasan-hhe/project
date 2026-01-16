@@ -48,7 +48,6 @@ class NotificationController extends Controller
                 'is_active' => $request->input('is_active')
             ]);
 
-            // تحديث الـ notification للحصول على أحدث البيانات (خاصة created_at)
             $notification->refresh();
 
             if ($request->has('items')) {
@@ -182,7 +181,6 @@ class NotificationController extends Controller
                 'is_active' => $request->input('is_active'),
             ]);
             if ($request->has('users')) {
-                // حذف المستخدمين الذين تم إزالتهم
                 $existingUserNotifications = UserNotification::where('notification_id', $notification->id)->get();
                 foreach ($existingUserNotifications as $userNotification) {
                     if (!in_array($userNotification->user_id, $request->input('users'))) {
@@ -190,7 +188,6 @@ class NotificationController extends Controller
                     }
                 }
 
-                // إضافة المستخدمين الجدد
                 foreach ($request->input('users') as $userId) {
                     $exists = UserNotification::where('notification_id', $notification->id)
                         ->where('user_id', $userId)

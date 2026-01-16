@@ -17,42 +17,7 @@ use function App\Helpers\uploadImage;
 
 class ProfileController extends Controller
 {
-    #[OA\Get(
-        path: "/my-profile",
-        summary: "Get user profile",
-        description: "Retrieve authenticated user's profile information",
-        tags: ["Profile"],
-        security: [["bearerAuth" => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Profile retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(
-                            property: "data",
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "id", type: "integer", example: 1),
-                                new OA\Property(property: "first_name", type: "string", example: "أحمد"),
-                                new OA\Property(property: "last_name", type: "string", example: "محمد"),
-                                new OA\Property(property: "phone_number", type: "string", example: "0912345678"),
-                                new OA\Property(property: "email", type: "string", nullable: true, example: "ahmed@example.com"),
-                                new OA\Property(property: "account_type", type: "string", enum: ["RENTER", "OWNER", "ADMIN"], example: "RENTER"),
-                                new OA\Property(property: "status", type: "string", enum: ["PENDING", "APPROVED", "REJECTED"], example: "APPROVED"),
-                                new OA\Property(property: "date_of_birth", type: "string", format: "date", nullable: true, example: "1990-01-01"),
-                                new OA\Property(property: "avatar_url", type: "string", nullable: true),
-                                new OA\Property(property: "identity_document_url", type: "string", nullable: true),
-                            ]
-                        ),
-                        new OA\Property(property: "body", type: "string", example: "Profile retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: "Unauthenticated"),
-        ]
-    )]
+    #[OA\Get(path: "/my-profile", tags: ["Profile"], security: [["bearerAuth" => []]])]
     public function show(Request $request)
     {
         $user = $request->user();
@@ -70,47 +35,7 @@ class ProfileController extends Controller
         ], 'تم جلب الملف الشخصي بنجاح.');
     }
 
-    #[OA\Post(
-        path: "/update-profile-info",
-        summary: "Update user profile",
-        description: "Update authenticated user's profile information including images",
-        tags: ["Profile"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    required: ["first_name", "last_name", "phone_number", "password", "identity_document_image"],
-                    properties: [
-                        new OA\Property(property: "first_name", type: "string", example: "أحمد"),
-                        new OA\Property(property: "last_name", type: "string", example: "محمد"),
-                        new OA\Property(property: "phone_number", type: "string", pattern: "^[0-9]+$", example: "0912345678"),
-                        new OA\Property(property: "email", type: "string", format: "email", nullable: true, example: "ahmed@example.com"),
-                        new OA\Property(property: "password", type: "string", format: "password", minLength: 6, example: "password123"),
-                        new OA\Property(property: "date_of_birth", type: "string", format: "date", nullable: true, example: "1990-01-01"),
-                        new OA\Property(property: "account_type", type: "string", enum: ["tenant", "apartment_owner"], nullable: true),
-                        new OA\Property(property: "avatar_image", type: "string", format: "binary", description: "Avatar image (optional)"),
-                        new OA\Property(property: "identity_document_image", type: "string", format: "binary", description: "Identity document image (required)"),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Profile updated successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Profile updated successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 422, description: "Validation error"),
-        ]
-    )]
+    #[OA\Post(path: "/update-profile-info", tags: ["Profile"], security: [["bearerAuth" => []]])]
     public function update(Request $request)
     {
         $user = $request->user();

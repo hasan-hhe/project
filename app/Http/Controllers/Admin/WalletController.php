@@ -70,8 +70,6 @@ class WalletController extends Controller
                 'wallet_balance' => $newBalance,
             ]);
 
-            // يمكنك إضافة سجل للمعاملة هنا إذا كان لديك جدول transactions
-
             DB::commit();
 
             return redirect()

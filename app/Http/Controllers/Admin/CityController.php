@@ -146,7 +146,6 @@ class CityController extends Controller
     public function destroy(City $city)
     {
         try {
-            // التحقق من وجود شقق مرتبطة
             $apartmentsCount = $city->apartments()->count();
             if ($apartmentsCount > 0) {
                 return redirect()
@@ -189,7 +188,6 @@ class CityController extends Controller
                     continue;
                 }
 
-                // التحقق من وجود شقق مرتبطة
                 if ($city->apartments()->count() > 0) {
                     DB::rollBack();
                     return redirect()

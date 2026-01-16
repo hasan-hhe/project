@@ -126,7 +126,6 @@ class GovernorateController extends Controller
     public function destroy(Governorate $governorate)
     {
         try {
-            // التحقق من وجود مدن مرتبطة
             $citiesCount = $governorate->cities()->count();
             if ($citiesCount > 0) {
                 return redirect()
@@ -169,7 +168,6 @@ class GovernorateController extends Controller
                     continue;
                 }
 
-                // التحقق من وجود مدن مرتبطة
                 if ($governorate->cities()->count() > 0) {
                     DB::rollBack();
                     return redirect()

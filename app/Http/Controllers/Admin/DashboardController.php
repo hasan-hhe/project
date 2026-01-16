@@ -18,7 +18,7 @@ class DashboardController extends Controller
         $lastMonth = Carbon::now()->subMonth();
         $lastWeek = Carbon::now()->subWeek();
 
-        // 📊 إحصائيات المستخدمين
+        // Users stats
         $totalUsers = User::count();
         $rentersCount = User::where('account_type', 'RENTER')->count();
         $ownersCount = User::where('account_type', 'OWNER')->count();
@@ -26,14 +26,14 @@ class DashboardController extends Controller
         $newUsersLastMonth = User::where('created_at', '>=', $lastMonth)->count();
         $newUsersLastWeek = User::where('created_at', '>=', $lastWeek)->count();
 
-        // 🏠 إحصائيات الشقق
+        // Apartments
         $totalApartments = Apartment::count();
         $activeApartments = Apartment::where('is_active', true)->count();
         $inactiveApartments = Apartment::where('is_active', false)->count();
         $newApartmentsLastMonth = Apartment::where('created_at', '>=', $lastMonth)->count();
         $newApartmentsLastWeek = Apartment::where('created_at', '>=', $lastWeek)->count();
 
-        // 📅 إحصائيات الحجوزات
+        // Bookings
         $totalBookings = Booking::count();
         $pendingBookings = Booking::where('status', 'PENDING')->count();
         $confirmedBookings = Booking::where('status', 'CONFIRMED')->count();
@@ -42,7 +42,7 @@ class DashboardController extends Controller
         $newBookingsLastMonth = Booking::where('created_at', '>=', $lastMonth)->count();
         $newBookingsLastWeek = Booking::where('created_at', '>=', $lastWeek)->count();
 
-        // 💰 إيرادات الحجوزات
+        // Revenue
         $totalRevenue = Booking::where('status', 'COMPLETED')->sum('total_price');
         $revenueLastMonth = Booking::where('status', 'COMPLETED')
             ->where('created_at', '>=', $lastMonth)
@@ -51,12 +51,12 @@ class DashboardController extends Controller
             ->where('created_at', '>=', $lastWeek)
             ->sum('total_price');
 
-        // ⭐ إحصائيات التقييمات
+        // Reviews
         $totalReviews = Review::count();
         $averageRating = Apartment::avg('rating_avg') ?? 0;
         $newReviewsLastMonth = Review::where('created_at', '>=', $lastMonth)->count();
 
-        // 👤 إحصائيات أصحاب الشقق
+        // Owners status
         $pendingOwners = User::where('account_type', 'OWNER')
             ->where('status', 'PENDING')
             ->count();
@@ -67,7 +67,7 @@ class DashboardController extends Controller
             ->where('status', 'REJECTED')
             ->count();
 
-        // 📆 إحصائيات الأسبوع الحالي (للرسم البياني)
+        // Weekly chart data
         $startOfWeek = Carbon::now()->startOfWeek(Carbon::SATURDAY);
         $endOfWeek = $startOfWeek->copy()->addDays(6);
 
@@ -99,14 +99,13 @@ class DashboardController extends Controller
         $chartBookingsData = array_values($dailyBookings);
         $chartRevenueData = array_values($dailyRevenue);
 
-        // التأكد من أن البيانات موجودة حتى لو كانت فارغة
         if (empty($chartLabels)) {
             $chartLabels = ['لا توجد بيانات'];
             $chartBookingsData = [0];
             $chartRevenueData = [0];
         }
 
-        // 📈 إحصائيات شهرية (آخر 12 شهر)
+        // Monthly data
         $monthsLabels = [];
         $usersMonthlyData = [];
         $apartmentsMonthlyData = [];
@@ -135,7 +134,6 @@ class DashboardController extends Controller
                 ->sum('total_price');
         }
 
-        // التأكد من أن البيانات موجودة حتى لو كانت فارغة
         if (empty($monthsLabels)) {
             $monthsLabels = ['لا توجد بيانات'];
             $usersMonthlyData = [0];
@@ -144,13 +142,13 @@ class DashboardController extends Controller
             $revenueMonthlyData = [0];
         }
 
-        // 🏆 أفضل الشقق (حسب التقييم)
+        // Top rated
         $topRatedApartments = Apartment::orderBy('rating_avg', 'DESC')
             ->where('rating_avg', '>', 0)
             ->limit(5)
             ->get(['id', 'title', 'rating_avg', 'price']);
 
-        // 📊 الحجوزات القادمة (في الأسبوع القادم)
+        // Upcoming bookings
         $upcomingBookings = Booking::where('status', 'CONFIRMED')
             ->whereBetween('start_date', [Carbon::now(), Carbon::now()->addWeek()])
             ->with(['apartment', 'renter'])
@@ -159,20 +157,17 @@ class DashboardController extends Controller
             ->get();
 
         return view('admin.dashboard.index', compact(
-            // المستخدمون
             'totalUsers',
             'rentersCount',
             'ownersCount',
             'adminsCount',
             'newUsersLastMonth',
             'newUsersLastWeek',
-            // الشقق
             'totalApartments',
             'activeApartments',
             'inactiveApartments',
             'newApartmentsLastMonth',
             'newApartmentsLastWeek',
-            // الحجوزات
             'totalBookings',
             'pendingBookings',
             'confirmedBookings',
@@ -180,19 +175,15 @@ class DashboardController extends Controller
             'completedBookings',
             'newBookingsLastMonth',
             'newBookingsLastWeek',
-            // الإيرادات
             'totalRevenue',
             'revenueLastMonth',
             'revenueLastWeek',
-            // التقييمات
             'totalReviews',
             'averageRating',
             'newReviewsLastMonth',
-            // أصحاب الشقق
             'pendingOwners',
             'approvedOwners',
             'rejectedOwners',
-            // الرسوم البيانية
             'chartLabels',
             'chartBookingsData',
             'chartRevenueData',
@@ -201,7 +192,6 @@ class DashboardController extends Controller
             'apartmentsMonthlyData',
             'bookingsMonthlyData',
             'revenueMonthlyData',
-            // إضافية
             'topRatedApartments',
             'upcomingBookings'
         ));

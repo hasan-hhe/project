@@ -9,38 +9,17 @@ use App\Models\Apartment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Exception;
 use OpenApi\Attributes as OA;
 
 class BookingController extends Controller
 {
-    #[OA\Get(
-        path: "/reservations/my-reservations",
-        summary: "Get my reservations",
-        description: "Retrieve all reservations for the authenticated user",
-        tags: ["Reservations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", minimum: 1, maximum: 50, default: 10)),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Reservations retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Reservations retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
+    #[OA\Get(path: "/reservations/my-reservations", tags: ["Reservations"], security: [["bearerAuth" => []]])]
     public function getMyReservations(Request $request)
     {
         $user = $request->user();
-
-        $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
+        $perPage = $request->get('per_page', 10);
+        $perPage = max(1, min(50, (int)$perPage));
 
         $bookings = Booking::where('renter_id', $user->id)
             ->with(['apartment', 'apartment.owner', 'apartment.photos'])
@@ -52,78 +31,7 @@ class BookingController extends Controller
         ], 'تم جلب الحجوزات بنجاح.');
     }
 
-    // #[OA\Get(
-    //     path: "/reservations/{id}",
-    //     summary: "Get reservation by ID",
-    //     description: "Retrieve detailed information about a specific reservation",
-    //     tags: ["Reservations"],
-    //     security: [["bearerAuth" => []]],
-    //     parameters: [
-    //         new OA\Parameter(name: "id", in: "path", required: true, description: "Reservation ID", schema: new OA\Schema(type: "integer")),
-    //     ],
-    //     responses: [
-    //         new OA\Response(
-    //             response: 200,
-    //             description: "Reservation retrieved successfully",
-    //             content: new OA\JsonContent(
-    //                 properties: [
-    //                     new OA\Property(property: "message", type: "string", example: "success"),
-    //                     new OA\Property(property: "data", type: "object"),
-    //                     new OA\Property(property: "body", type: "string", example: "Reservation retrieved successfully.")
-    //                 ]
-    //             )
-    //         ),
-    //         new OA\Response(response: 404, description: "Reservation not found"),
-    //     ]
-    // )]
-    // public function show(Request $request, $id)
-    // {
-    //     $user = $request->user();
-    //     if (!$user) {
-    //         return ResponseHelper::error('Unauthenticated.', 401);
-    //     }
-
-    //     $booking = Booking::where('id', $id)
-    //         ->where('renter_id', $user->id)
-    //         ->with(['apartment', 'apartment.owner', 'reviews'])
-    //         ->firstOrFail();
-
-    //     return ResponseHelper::success($booking, 'Reservation retrieved successfully.');
-    // }
-
-    #[OA\Post(
-        path: "/reservations",
-        summary: "Create new reservation",
-        description: "Create a new booking/reservation for an apartment",
-        tags: ["Reservations"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["apartment_id", "start_date", "end_date"],
-                properties: [
-                    new OA\Property(property: "apartment_id", type: "integer", example: 1),
-                    new OA\Property(property: "start_date", type: "string", format: "date", example: "2026-01-15"),
-                    new OA\Property(property: "end_date", type: "string", format: "date", example: "2026-01-20"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Reservation created successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Reservation created successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: "Apartment not available for selected dates"),
-            new OA\Response(response: 422, description: "Validation error"),
-        ]
-    )]
+    #[OA\Post(path: "/reservations", tags: ["Reservations"], security: [["bearerAuth" => []]])]
     public function store(Request $request)
     {
         $user = $request->user();
@@ -131,15 +39,19 @@ class BookingController extends Controller
             return ResponseHelper::error('غير مصرح لك.', 401);
         }
 
-        $request->validate([
-            'apartment_id' => 'required|exists:apartments,id',
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after:start_date',
-        ]);
+        try {
+            $request->validate([
+                'apartment_id' => 'required|exists:apartments,id',
+                'start_date' => 'required|date|after_or_equal:today',
+                'end_date' => 'required|date|after:start_date',
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
         $apartment = Apartment::findOrFail($request->apartment_id);
 
-        // Check if apartment is available for the selected dates
+        // check availability
         $conflictingBooking = Booking::where('apartment_id', $apartment->id)
             ->where('status', '!=', 'CANCLED')
             ->where(function ($query) use ($request) {
@@ -156,7 +68,7 @@ class BookingController extends Controller
             return ResponseHelper::error('الشقة غير متاحة للتواريخ المحددة.', 400);
         }
 
-        // Calculate total price
+        // calc price
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
         $nights = $startDate->diffInDays($endDate);
@@ -191,40 +103,7 @@ class BookingController extends Controller
         }
     }
 
-    #[OA\Post(
-        path: "/reservations/{id}/update",
-        summary: "Update reservation",
-        description: "Update an existing reservation (only pending reservations can be updated)",
-        tags: ["Reservations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Reservation ID", schema: new OA\Schema(type: "integer")),
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "start_date", type: "string", format: "date", nullable: true, example: "2026-01-15"),
-                    new OA\Property(property: "end_date", type: "string", format: "date", nullable: true, example: "2026-01-20"),
-                    new OA\Property(property: "change_reason", type: "string", nullable: true, example: "تغيير في الخطط"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Reservation updated successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Reservation updated successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: "Only pending reservations can be updated or apartment not available"),
-        ]
-    )]
+    #[OA\Post(path: "/reservations/{id}/update", tags: ["Reservations"], security: [["bearerAuth" => []]])]
     public function update(Request $request, $id)
     {
         $user = $request->user();
@@ -253,7 +132,7 @@ class BookingController extends Controller
             $startDate = $request->start_date ?? $booking->start_date;
             $endDate = $request->end_date ?? $booking->end_date;
 
-            // Check if apartment is available for the new dates
+            // check availability
             $conflictingBooking = Booking::where('apartment_id', $booking->apartment_id)
                 ->where('id', '!=', $booking->id)
                 ->where('status', '!=', 'CANCLED')
@@ -271,7 +150,7 @@ class BookingController extends Controller
                 return ResponseHelper::error('الشقة غير متاحة للتواريخ المحددة.', 400);
             }
 
-            // Recalculate total price
+            // recalc price
             $start = Carbon::parse($startDate);
             $end = Carbon::parse($endDate);
             $nights = $start->diffInDays($end);
@@ -283,7 +162,6 @@ class BookingController extends Controller
                 'total_price' => $totalPrice,
             ];
 
-            // إضافة سبب التغيير إذا تم توفيره
             if ($request->has('change_reason') && $request->change_reason) {
                 $updateData['change_reason'] = $request->change_reason;
             }
@@ -303,38 +181,7 @@ class BookingController extends Controller
         }
     }
 
-    #[OA\Post(
-        path: "/reservations/{id}/cancel",
-        summary: "Cancel reservation",
-        description: "Cancel an existing reservation",
-        tags: ["Reservations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Reservation ID", schema: new OA\Schema(type: "integer")),
-        ],
-        requestBody: new OA\RequestBody(
-            required: false,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "cancel_reason", type: "string", nullable: true, example: "Change of plans"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Reservation cancelled successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Reservation cancelled successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: "Reservation cannot be cancelled"),
-        ]
-    )]
+    #[OA\Post(path: "/reservations/{id}/cancel", tags: ["Reservations"], security: [["bearerAuth" => []]])]
     public function cancel(Request $request, $id)
     {
         $user = $request->user();
@@ -350,9 +197,13 @@ class BookingController extends Controller
             return ResponseHelper::error('لا يمكن إلغاء الحجز.', 400);
         }
 
-        $request->validate([
-            'cancel_reason' => 'nullable|string|max:255',
-        ]);
+        try {
+            $request->validate([
+                'cancel_reason' => 'nullable|string|max:255',
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -371,30 +222,7 @@ class BookingController extends Controller
         }
     }
 
-    #[OA\Post(
-        path: "/reservations/{id}/delete",
-        summary: "Delete reservation",
-        description: "Permanently delete a reservation",
-        tags: ["Reservations"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Reservation ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Reservation deleted successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Reservation deleted successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: "Reservation cannot be deleted"),
-        ]
-    )]
+    #[OA\Post(path: "/reservations/{id}/delete", tags: ["Reservations"], security: [["bearerAuth" => []]])]
     public function destroy(Request $request, $id)
     {
         $user = $request->user();

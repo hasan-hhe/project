@@ -20,7 +20,6 @@ class ApartmentController extends Controller
     {
         $query = Apartment::with('owner')->orderBy('id', 'DESC');
 
-        // Filter by status
         if ($request->has('status') && !empty($request->status)) {
             if ($request->status == 'active') {
                 $query->where('is_active', true);
@@ -29,12 +28,10 @@ class ApartmentController extends Controller
             }
         }
 
-        // Filter by owner
         if ($request->has('owner_id') && !empty($request->owner_id)) {
             $query->where('owner_id', $request->owner_id);
         }
 
-        // Search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -104,13 +101,13 @@ class ApartmentController extends Controller
 
             return redirect()
                 ->route('admin.apartments.index')
-                ->with('success', __('تمت إضافة الشقة بنجاح'));
+                ->with('success', 'تمت إضافة الشقة بنجاح');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', __('حدث خطأ أثناء إضافة الشقة: ') . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء إضافة الشقة: ' . $e->getMessage());
         }
     }
 
@@ -176,13 +173,13 @@ class ApartmentController extends Controller
 
             return redirect()
                 ->back()
-                ->with('success', __('تم تحديث الشقة بنجاح'));
+                ->with('success', 'تم تحديث الشقة بنجاح');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', __('حدث خطأ أثناء تحديث الشقة: ') . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء تحديث الشقة: ' . $e->getMessage());
         }
     }
 
@@ -192,12 +189,11 @@ class ApartmentController extends Controller
     public function destroy(Apartment $apartment)
     {
         try {
-            // التحقق من وجود حجوزات
             $bookingsCount = $apartment->bookings()->count();
             if ($bookingsCount > 0) {
                 return redirect()
                     ->back()
-                    ->with('error', __('لا يمكن حذف الشقة لأنها لديها ' . $bookingsCount . ' حجز'));
+                    ->with('error', 'لا يمكن حذف الشقة لأنها لديها ' . $bookingsCount . ' حجز');
             }
 
             DB::beginTransaction();
@@ -206,12 +202,12 @@ class ApartmentController extends Controller
 
             return redirect()
                 ->back()
-                ->with('success', __('تم حذف الشقة بنجاح'));
+                ->with('success', 'تم حذف الشقة بنجاح');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()
                 ->back()
-                ->with('error', __('حدث خطأ أثناء حذف الشقة: ') . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء حذف الشقة: ' . $e->getMessage());
         }
     }
 
@@ -226,11 +222,11 @@ class ApartmentController extends Controller
 
             return redirect()
                 ->back()
-                ->with('success', __('تم تغيير حالة الشقة'));
+                ->with('success', 'تم تغيير حالة الشقة');
         } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->with('error', __('حدث خطأ أثناء تغيير الحالة'));
+                ->with('error', 'حدث خطأ أثناء تغيير الحالة');
         }
     }
 
@@ -254,13 +250,12 @@ class ApartmentController extends Controller
                     continue;
                 }
 
-                // التحقق من وجود حجوزات
                 $bookingsCount = $apartment->bookings()->count();
                 if ($bookingsCount > 0) {
                     DB::rollBack();
                     return redirect()
                         ->back()
-                        ->with('error', __('لا يمكن حذف الشقة "' . $apartment->title . '" لأنها لديها ' . $bookingsCount . ' حجز'));
+                        ->with('error', 'لا يمكن حذف الشقة "' . $apartment->title . '" لأنها لديها ' . $bookingsCount . ' حجز');
                 }
 
                 $apartment->delete();
@@ -270,12 +265,12 @@ class ApartmentController extends Controller
 
             return redirect()
                 ->back()
-                ->with('success', __('تم حذف الشقق المحددة بنجاح'));
+                ->with('success', 'تم حذف الشقق المحددة بنجاح');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()
                 ->back()
-                ->with('error', __('حدث خطأ أثناء حذف الشقق: ') . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء حذف الشقق: ' . $e->getMessage());
         }
     }
 }

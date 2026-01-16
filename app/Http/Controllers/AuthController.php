@@ -15,53 +15,7 @@ use function App\Helpers\uploadImage;
 
 class AuthController extends Controller
 {
-    #[OA\Post(
-        path: "/auth/register",
-        summary: "Register a new user",
-        description: "Register a new user account with personal information and documents",
-        tags: ["Authentication"],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    required: ["first_name", "last_name", "phone_number", "password", "identity_document_image"],
-                    properties: [
-                        new OA\Property(property: "first_name", type: "string", example: "أحمد"),
-                        new OA\Property(property: "last_name", type: "string", example: "محمد"),
-                        new OA\Property(property: "phone_number", type: "string", pattern: "^[0-9]+$", example: "0912345678"),
-                        new OA\Property(property: "email", type: "string", format: "email", example: "ahmed@example.com"),
-                        new OA\Property(property: "password", type: "string", format: "password", minLength: 6, example: "password123"),
-                        new OA\Property(property: "date_of_birth", type: "string", format: "date", example: "1990-01-01"),
-                        new OA\Property(property: "account_type", type: "string", enum: ["RENTER", "OWNER"], example: "RENTER"),
-                        new OA\Property(property: "avatar_image", type: "string", format: "binary", description: "User avatar image (optional)"),
-                        new OA\Property(property: "identity_document_image", type: "string", format: "binary", description: "Identity document image (required)"),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Registration successful",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(
-                            property: "data",
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "user", type: "object"),
-                                new OA\Property(property: "token", type: "string", example: "1|xxxxxxxxxxxxx")
-                            ]
-                        ),
-                        new OA\Property(property: "body", type: "string", example: "تم تسجيل الدخول بنجاح")
-                    ]
-                )
-            ),
-            new OA\Response(response: 422, description: "Validation error"),
-        ]
-    )]
+    #[OA\Post(path: "/auth/register", tags: ["Authentication"])]
     public function register(Request $request)
     {
         try {
@@ -78,10 +32,7 @@ class AuthController extends Controller
                 'password' => 'required|min:6'
             ]);
         } catch (Exception $e) {
-            return response()->json([
-                'message' => 'error',
-                'body' => $e->getMessage()
-            ]);
+            return ResponseHelper::error($e->getMessage(), 422);
         }
 
         $avatar = null;
@@ -112,44 +63,7 @@ class AuthController extends Controller
         ], 'تم تسجيل الحساب بنجاح , بانتظار الموافقة من الادمن');
     }
 
-    #[OA\Post(
-        path: "/auth/login",
-        summary: "User login",
-        description: "Authenticate user and return access token",
-        tags: ["Authentication"],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["phone_number", "password"],
-                properties: [
-                    new OA\Property(property: "phone_number", type: "string", pattern: "^[0-9]+$", example: "0912345678"),
-                    new OA\Property(property: "password", type: "string", format: "password", example: "password123"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Login successful",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(
-                            property: "data",
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "user", type: "object"),
-                                new OA\Property(property: "token", type: "string", example: "1|xxxxxxxxxxxxx")
-                            ]
-                        ),
-                        new OA\Property(property: "body", type: "string", example: "تم تسجيل الدخول بنجاح")
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: "Invalid credentials"),
-            new OA\Response(response: 404, description: "User not found"),
-        ]
-    )]
+    #[OA\Post(path: "/auth/login", tags: ["Authentication"])]
     public function login(Request $request)
     {
         try {
@@ -184,27 +98,7 @@ class AuthController extends Controller
     }
 
 
-    #[OA\Post(
-        path: "/logout",
-        summary: "User logout",
-        description: "Revoke all user access tokens",
-        tags: ["Authentication"],
-        security: [["bearerAuth" => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Logout successful",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "null"),
-                        new OA\Property(property: "body", type: "string", example: "Logout done!")
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: "Unauthenticated"),
-        ]
-    )]
+    #[OA\Post(path: "/logout", tags: ["Authentication"], security: [["bearerAuth" => []]])]
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();

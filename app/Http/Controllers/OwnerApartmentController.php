@@ -12,6 +12,7 @@ use App\Models\Photo;
 use App\Models\City;
 use App\Models\Governorate;
 use App\Models\Notification;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,30 +24,7 @@ use function App\Helpers\uploadImage;
 
 class OwnerApartmentController extends Controller
 {
-    #[OA\Get(
-        path: "/owner/apartments",
-        summary: "Get owner apartments",
-        description: "Retrieve all apartments owned by the authenticated user (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", minimum: 1, maximum: 50, default: 10)),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Apartments retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Apartments retrieved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: "Unauthorized - Only OWNER account type can access"),
-        ]
-    )]
+    #[OA\Get(path: "/owner/apartments", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function index(Request $request)
     {
         $user = $request->user();
@@ -54,7 +32,8 @@ class OwnerApartmentController extends Controller
             return ResponseHelper::error('يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
-        $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
+        $perPage = $request->get('per_page', 10);
+        $perPage = max(1, min(50, (int)$perPage));
 
         $apartments = Apartment::where('owner_id', $user->id)
             ->with(['city', 'governorate', 'photos', 'bookings', 'reviews'])
@@ -66,26 +45,7 @@ class OwnerApartmentController extends Controller
         ], 'تم جلب الشقق بنجاح.');
     }
 
-    #[OA\Get(
-        path: "/owner/apartments/locations",
-        summary: "Get locations for apartment creation",
-        description: "Get governorates and cities for creating apartments (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Locations retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Locations retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
+    #[OA\Get(path: "/owner/apartments/locations", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function getLocations(Request $request)
     {
         $user = $request->user();
@@ -102,87 +62,7 @@ class OwnerApartmentController extends Controller
         ], 'تم جلب المواقع بنجاح.');
     }
 
-    // #[OA\Get(
-    //     path: "/owner/apartments/{id}",
-    //     summary: "Get owner apartment by ID",
-    //     description: "Retrieve detailed information about a specific apartment owned by the authenticated user (OWNER account type required)",
-    //     tags: ["Owner"],
-    //     security: [["bearerAuth" => []]],
-    //     parameters: [
-    //         new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-    //     ],
-    //     responses: [
-    //         new OA\Response(
-    //             response: 200,
-    //             description: "Apartment retrieved successfully",
-    //             content: new OA\JsonContent(
-    //                 properties: [
-    //                     new OA\Property(property: "message", type: "string", example: "success"),
-    //                     new OA\Property(property: "data", type: "object"),
-    //                     new OA\Property(property: "body", type: "string", example: "Apartment retrieved successfully.")
-    //                 ]
-    //             )
-    //         ),
-    //         new OA\Response(response: 403, description: "Unauthorized"),
-    //         new OA\Response(response: 404, description: "Apartment not found"),
-    //     ]
-    // )]
-    // public function show(Request $request, $id)
-    // {
-    //     $user = $request->user();
-    //     if (!$user || $user->account_type !== 'OWNER') {
-    //         return ResponseHelper::error('Unauthorized. Only apartment owners can access this.', 403);
-    //     }
-
-    //     $apartment = Apartment::where('id', $id)
-    //         ->where('owner_id', $user->id)
-    //         ->with(['city', 'governorate', 'photos', 'bookings.renter', 'reviews.user'])
-    //         ->firstOrFail();
-
-    //     return ResponseHelper::success(ApartmentResource::make($apartment), 'Apartment retrieved successfully.');
-    // }
-
-    #[OA\Post(
-        path: "/owner/apartments",
-        summary: "Create new apartment",
-        description: "Create a new apartment listing (OWNER account type required, account must be APPROVED)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    required: ["governorate_id", "city_id", "title", "description", "price", "rooms_count", "address_line"],
-                    properties: [
-                        new OA\Property(property: "governorate_id", type: "integer", example: 1),
-                        new OA\Property(property: "city_id", type: "integer", example: 1),
-                        new OA\Property(property: "title", type: "string", maxLength: 255, example: "Beautiful Apartment in Downtown"),
-                        new OA\Property(property: "description", type: "string", example: "Spacious apartment with amazing view"),
-                        new OA\Property(property: "price", type: "number", format: "float", minimum: 0, example: 150.50),
-                        new OA\Property(property: "rooms_count", type: "integer", minimum: 1, example: 3),
-                        new OA\Property(property: "address_line", type: "string", maxLength: 255, example: "123 Main Street"),
-                        new OA\Property(property: "photos", type: "array", items: new OA\Items(type: "string", format: "binary"), description: "Apartment photos (optional)"),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Apartment created successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Apartment created successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: "Unauthorized or account not approved"),
-            new OA\Response(response: 422, description: "Validation error"),
-        ]
-    )]
+    #[OA\Post(path: "/owner/apartments", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function store(Request $request)
     {
         $user = $request->user();
@@ -190,22 +70,25 @@ class OwnerApartmentController extends Controller
             return ResponseHelper::error('غير مصرح. يمكن لمالكي الشقق فقط الوصول إلى هذا.', 403);
         }
 
-        // Check if user is approved
         if ($user->status !== 'APPROVED') {
             return ResponseHelper::error('حسابك غير موافق عليه بعد. يرجى انتظار موافقة الإدارة.', 403);
         }
 
-        $request->validate([
-            'governorate_id' => 'required|exists:governorates,id',
-            'city_id' => 'required|exists:cities,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'rooms_count' => 'required|integer|min:1',
-            'address_line' => 'required|string|max:255',
-            'photos' => 'nullable|array',
-            'photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
-        ]);
+        try {
+            $request->validate([
+                'governorate_id' => 'required|exists:governorates,id',
+                'city_id' => 'required|exists:cities,id',
+                'title' => 'required|string|max:255',
+                'description' => 'required|string',
+                'price' => 'required|numeric|min:0',
+                'rooms_count' => 'required|integer|min:1',
+                'address_line' => 'required|string|max:255',
+                'photos' => 'nullable|array',
+                'photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -220,16 +103,15 @@ class OwnerApartmentController extends Controller
                 'rooms_count' => $request->rooms_count,
                 'address_line' => $request->address_line,
                 'rating_avg' => 5.0,
-                'is_active' => false, // Default inactive until admin approves
+                'is_active' => false,
                 'is_recommended' => false,
             ]);
 
-            // Upload photos if provided
             if ($request->hasFile('photos')) {
                 $maxSortOrder = 0;
                 foreach ($request->file('photos') as $index => $photo) {
                     $url = uploadImage($photo, 'apartments/photos', 'public');
-                    $isCover = $index === 0; // First photo is cover
+                    $isCover = $index === 0;
 
                     Photo::create([
                         'apartment_id' => $apartment->id,
@@ -253,44 +135,7 @@ class OwnerApartmentController extends Controller
         }
     }
 
-    #[OA\Post(
-        path: "/owner/apartments/{id}",
-        summary: "Update apartment",
-        description: "Update an existing apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "governorate_id", type: "integer", nullable: true),
-                    new OA\Property(property: "city_id", type: "integer", nullable: true),
-                    new OA\Property(property: "title", type: "string", maxLength: 255, nullable: true),
-                    new OA\Property(property: "description", type: "string", nullable: true),
-                    new OA\Property(property: "price", type: "number", format: "float", minimum: 0, nullable: true),
-                    new OA\Property(property: "rooms_count", type: "integer", minimum: 1, nullable: true),
-                    new OA\Property(property: "address_line", type: "string", maxLength: 255, nullable: true),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Apartment updated successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Apartment updated successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: "Unauthorized"),
-        ]
-    )]
+    #[OA\Post(path: "/owner/apartments/{id}", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function update(Request $request, $id)
     {
         $user = $request->user();
@@ -302,15 +147,19 @@ class OwnerApartmentController extends Controller
             ->where('owner_id', $user->id)
             ->firstOrFail();
 
-        $request->validate([
-            'governorate_id' => 'sometimes|required|exists:governorates,id',
-            'city_id' => 'sometimes|required|exists:cities,id',
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'price' => 'sometimes|required|numeric|min:0',
-            'rooms_count' => 'sometimes|required|integer|min:1',
-            'address_line' => 'sometimes|required|string|max:255',
-        ]);
+        try {
+            $request->validate([
+                'governorate_id' => 'sometimes|required|exists:governorates,id',
+                'city_id' => 'sometimes|required|exists:cities,id',
+                'title' => 'sometimes|required|string|max:255',
+                'description' => 'sometimes|required|string',
+                'price' => 'sometimes|required|numeric|min:0',
+                'rooms_count' => 'sometimes|required|integer|min:1',
+                'address_line' => 'sometimes|required|string|max:255',
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -338,31 +187,7 @@ class OwnerApartmentController extends Controller
         }
     }
 
-    #[OA\Delete(
-        path: "/owner/apartments/{id}",
-        summary: "Delete apartment",
-        description: "Permanently delete an apartment (OWNER account type required, cannot delete if has active bookings)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Apartment deleted successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Apartment deleted successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: "Cannot delete apartment with active bookings"),
-            new OA\Response(response: 403, description: "Unauthorized"),
-        ]
-    )]
+    #[OA\Delete(path: "/owner/apartments/{id}", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
@@ -374,7 +199,6 @@ class OwnerApartmentController extends Controller
             ->where('owner_id', $user->id)
             ->firstOrFail();
 
-        // Check if apartment has active bookings
         $activeBookings = $apartment->bookings()
             ->whereIn('status', ['PENDING', 'CONFIRMED'])
             ->count();
@@ -386,7 +210,6 @@ class OwnerApartmentController extends Controller
         try {
             DB::beginTransaction();
 
-            // Delete photos
             foreach ($apartment->photos as $photo) {
                 if (Storage::disk('public')->exists($photo->url)) {
                     Storage::disk('public')->delete($photo->url);
@@ -405,29 +228,7 @@ class OwnerApartmentController extends Controller
         }
     }
 
-    #[OA\Get(
-        path: "/owner/apartments/{id}/photos",
-        summary: "Get apartment photos",
-        description: "Retrieve all photos for an apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Photos retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "array", items: new OA\Items(type: "object")),
-                        new OA\Property(property: "body", type: "string", example: "Photos retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
+    #[OA\Get(path: "/owner/apartments/{id}/photos", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function getPhotos(Request $request, $id)
     {
         $user = $request->user();
@@ -449,45 +250,7 @@ class OwnerApartmentController extends Controller
         ], 'تم جلب الصور بنجاح.');
     }
 
-    /**
-     * Upload photos for apartment
-     */
-    #[OA\Post(
-        path: "/owner/apartments/{id}/photos",
-        summary: "Upload apartment photos",
-        description: "Upload one or more photos for an apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    required: ["photos"],
-                    properties: [
-                        new OA\Property(property: "photos", type: "array", items: new OA\Items(type: "string", format: "binary"), description: "Photo files (array)"),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Photos uploaded successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "array", items: new OA\Items(type: "object")),
-                        new OA\Property(property: "body", type: "string", example: "Photos uploaded successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 422, description: "Validation error"),
-        ]
-    )]
+    #[OA\Post(path: "/owner/apartments/{id}/photos", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function uploadPhotos(Request $request, $id)
     {
         $user = $request->user();
@@ -499,10 +262,14 @@ class OwnerApartmentController extends Controller
             ->where('owner_id', $user->id)
             ->firstOrFail();
 
-        $request->validate([
-            'photos' => 'required|array|min:1',
-            'photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
-        ]);
+        try {
+            $request->validate([
+                'photos' => 'required|array|min:1',
+                'photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -534,34 +301,7 @@ class OwnerApartmentController extends Controller
         }
     }
 
-    /**
-     * Delete photo
-     */
-    #[OA\Delete(
-        path: "/owner/apartments/{id}/photos/{photoId}",
-        summary: "Delete apartment photo",
-        description: "Delete a specific photo from an apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-            new OA\Parameter(name: "photoId", in: "path", required: true, description: "Photo ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Photo deleted successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Photo deleted successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "Photo not found"),
-        ]
-    )]
+    #[OA\Delete(path: "/owner/apartments/{id}/photos/{photoId}", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function deletePhoto(Request $request, $id, $photoId)
     {
         $user = $request->user();
@@ -595,34 +335,7 @@ class OwnerApartmentController extends Controller
         }
     }
 
-    /**
-     * Set cover photo
-     */
-    #[OA\Post(
-        path: "/owner/apartments/{id}/photos/{photoId}/set-cover",
-        summary: "Set cover photo",
-        description: "Set a specific photo as the cover photo for an apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-            new OA\Parameter(name: "photoId", in: "path", required: true, description: "Photo ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Cover photo set successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Cover photo set successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 404, description: "Photo not found"),
-        ]
-    )]
+    #[OA\Post(path: "/owner/apartments/{id}/photos/{photoId}/set-cover", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function setCoverPhoto(Request $request, $id, $photoId)
     {
         $user = $request->user();
@@ -641,10 +354,7 @@ class OwnerApartmentController extends Controller
         try {
             DB::beginTransaction();
 
-            // Remove cover from all photos
             $apartment->photos()->update(['is_cover' => false]);
-
-            // Set new cover
             $photo->update(['is_cover' => true]);
 
             DB::commit();
@@ -658,33 +368,7 @@ class OwnerApartmentController extends Controller
         }
     }
 
-    /**
-     * Get apartment bookings
-     */
-    #[OA\Get(
-        path: "/owner/apartments/{id}/bookings",
-        summary: "Get apartment bookings",
-        description: "Retrieve all bookings for a specific apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", minimum: 1, maximum: 50, default: 10)),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Bookings retrieved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Bookings retrieved successfully.")
-                    ]
-                )
-            ),
-        ]
-    )]
+    #[OA\Get(path: "/owner/apartments/{id}/bookings", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function getBookings(Request $request, $id)
     {
         $user = $request->user();
@@ -696,14 +380,14 @@ class OwnerApartmentController extends Controller
             ->where('owner_id', $user->id)
             ->firstOrFail();
 
-        $perPage = min(max((int)$request->integer('per_page', 10), 1), 50);
+        $perPage = $request->get('per_page', 10);
+        $perPage = max(1, min(50, (int)$perPage));
 
         $bookings = $apartment->bookings()
             ->with('renter')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        // إضافة معلومات عن طلبات التغيير
         $bookings->getCollection()->transform(function ($booking) {
             $booking->has_change_request = !empty($booking->change_reason);
             return $booking;
@@ -714,36 +398,7 @@ class OwnerApartmentController extends Controller
         ], 'تم جلب الحجوزات بنجاح.');
     }
 
-    /**
-     * Approve booking
-     */
-    #[OA\Post(
-        path: "/owner/apartments/{id}/bookings/{bookingId}/approve",
-        summary: "Approve booking",
-        description: "Approve a pending booking for an apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-            new OA\Parameter(name: "bookingId", in: "path", required: true, description: "Booking ID", schema: new OA\Schema(type: "integer")),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Booking approved successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Booking approved successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: "Booking cannot be approved"),
-            new OA\Response(response: 403, description: "Unauthorized"),
-            new OA\Response(response: 404, description: "Booking not found"),
-        ]
-    )]
+    #[OA\Post(path: "/owner/apartments/{id}/bookings/{bookingId}/approve", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function approveBooking(Request $request, $id, $bookingId)
     {
         $owner = $request->user();
@@ -796,44 +451,7 @@ class OwnerApartmentController extends Controller
         }
     }
 
-    /**
-     * Reject booking
-     */
-    #[OA\Post(
-        path: "/owner/apartments/{id}/bookings/{bookingId}/reject",
-        summary: "Reject booking",
-        description: "Reject a pending booking for an apartment (OWNER account type required)",
-        tags: ["Owner"],
-        security: [["bearerAuth" => []]],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, description: "Apartment ID", schema: new OA\Schema(type: "integer")),
-            new OA\Parameter(name: "bookingId", in: "path", required: true, description: "Booking ID", schema: new OA\Schema(type: "integer")),
-        ],
-        requestBody: new OA\RequestBody(
-            required: false,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "rejection_reason", type: "string", nullable: true, example: "Apartment not available"),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Booking rejected successfully",
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: "message", type: "string", example: "success"),
-                        new OA\Property(property: "data", type: "object"),
-                        new OA\Property(property: "body", type: "string", example: "Booking rejected successfully.")
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: "Booking cannot be rejected"),
-            new OA\Response(response: 403, description: "Unauthorized"),
-            new OA\Response(response: 404, description: "Booking not found"),
-        ]
-    )]
+    #[OA\Post(path: "/owner/apartments/{id}/bookings/{bookingId}/reject", tags: ["Owner"], security: [["bearerAuth" => []]])]
     public function rejectBooking(Request $request, $id, $bookingId)
     {
         $user = $request->user();

@@ -29,24 +29,20 @@ class AuthController extends Controller
         $password = $request->password;
         $remember = $request->has('remember');
 
-        // البحث عن المستخدم باستخدام phone_number
         $user = User::where('phone_number', $phoneNumber)->first();
 
         if (!$user) {
             return redirect()->back()->with('error', 'هذا الحساب غير موجود!');
         }
 
-        // التحقق من أن الحساب من نوع ADMIN فقط
         if ($user->account_type != 'ADMIN') {
             return redirect()->back()->with('error', 'هذا الحساب لا يملك صلاحية للدخول!');
         }
 
-        // التحقق من كلمة المرور
         if (!Hash::check($password, $user->password)) {
             return redirect()->back()->with('error', 'كلمة المرور غير صحيحة!');
         }
 
-        // تسجيل الدخول
         Auth::login($user, $remember);
 
         return redirect()->route('admin.dashboard.index');
