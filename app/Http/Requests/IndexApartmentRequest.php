@@ -13,15 +13,7 @@ class IndexApartmentRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'city_id' => ['nullable', 'integer', 'exists:cities,id'],
-            'governorate_id' => ['nullable', 'integer', 'exists:governorates,id'],
-            'min_price' => ['nullable', 'numeric', 'min:0', 'lte:max_price'],
-            'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
-            'sort_by' => ['nullable', 'in:price,created_at'],
-            'sort_dir' => ['nullable', 'in:asc,desc'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
-        ];
+        return [];
     }
 
     protected function prepareForValidation(): void

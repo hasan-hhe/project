@@ -23,7 +23,6 @@ class AuthController extends Controller
                 'first_name' => 'required|string',
                 'avatar_image' => 'nullable|image|mimes:png,jpg,gif',
                 'identity_document_image' => 'required|image|mimes:png,jpg,gif',
-                'identity_document_image' => 'required|image|mimes:png,jpg,gif',
                 'last_name' => 'required|string',
                 'phone_number' => 'required|string|unique:users|regex:/^[0-9]+$/',
                 'date_of_birth' => 'nullable|date',

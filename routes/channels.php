@@ -7,7 +7,6 @@ Broadcast::channel('user.{userId}', function ($user, $userId) {
 });
 
 Broadcast::channel('private-user.{userId}', function ($user, $userId) {
-    // التحقق من أن المستخدم المصدق عليه هو نفسه المستخدم في القناة
     return (int) $user->id === (int) $userId;
 });
 
@@ -16,13 +15,11 @@ Broadcast::channel('notifications', function ($user) {
 });
 
 Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
-    // التحقق من أن المستخدم مشارك في المحادثة
     $conversation = \App\Models\Conversation::find($conversationId);
 
     if (!$conversation) {
         return false;
     }
 
-    // السماح فقط لصاحب الشقة والمستأجر بالاستماع
     return ($conversation->owner_id == $user->id || $conversation->renter_id == $user->id);
 });

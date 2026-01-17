@@ -27,9 +27,9 @@ class MesssageResource extends JsonResource
             'text' => $this->content,
             'content' => $this->content, // Alias for compatibility
             'attachment_url' => $this->attachment_url,
-            'sent_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'read_at' => $this->read_at?->format('Y-m-d H:i:s'),
+            'sent_at' => $this->created_at,
+            'created_at' => $this->created_at,
+            'read_at' => $this->read_at,
             'is_me' => $isMe,
             'sender_name' => $this->sender ? ($this->sender->first_name . ' ' . $this->sender->last_name) : null,
             'sender_avatar' => $this->sender?->avatar_url,

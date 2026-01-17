@@ -30,8 +30,8 @@ class ConversationResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'last_message_at' => $lastMessage?->created_at?->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at,
+            'last_message_at' => $lastMessage?->created_at,
             'owner' => $this->owner ? new UserRecource($this->owner) : null,
             'renter' => $this->renter ? new UserRecource($this->renter) : null,
             'apartment' => $this->apartment ? new ApartmentResource($this->apartment) : null,

@@ -117,16 +117,6 @@ class ConversationController extends Controller
     public function getMessages(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('غير مصرح لك.', 401);
-        }
-
-        $conversation = Conversation::where(function ($query) use ($user) {
-            $query->where('owner_id', $user->id)
-                ->orWhere('renter_id', $user->id);
-        })
-            ->where('id', $id)
-            ->firstOrFail();
 
         $perPage = $request->get('per_page', 20);
         $perPage = max(1, min(50, (int)$perPage));
@@ -145,9 +135,6 @@ class ConversationController extends Controller
     public function sendMessage(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('غير مصرح لك.', 401);
-        }
 
         $conversation = Conversation::where(function ($query) use ($user) {
             $query->where('owner_id', $user->id)
@@ -196,9 +183,6 @@ class ConversationController extends Controller
     public function markAsRead(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('غير مصرح لك.', 401);
-        }
 
         $conversation = Conversation::where(function ($query) use ($user) {
             $query->where('owner_id', $user->id)

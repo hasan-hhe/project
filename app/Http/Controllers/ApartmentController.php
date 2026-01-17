@@ -5,22 +5,40 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\ApartmentResource;
 use App\Http\Requests\IndexApartmentRequest;
+use App\Http\Resources\ReservationResource;
 use App\Http\Resources\ReviewResource;
 use App\Models\Apartment;
+use App\Models\Booking;
 use App\Models\Review;
 use App\Models\Favorite;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
 class ApartmentController extends Controller
 {
     #[OA\Get(path: "/apartments", tags: ["Apartments"], security: [["bearerAuth" => []]])]
-    public function index(IndexApartmentRequest $request)
+    public function index(Request $request)
     {
-        $data = $request->validated();
+        try {
+            $request->validate([
+                'city_id' => ['nullable', 'integer', 'exists:cities,id'],
+                'governorate_id' => ['nullable', 'integer', 'exists:governorates,id'],
+                'min_price' => ['nullable', 'numeric', 'min:0'],
+                'max_price' => ['nullable', 'numeric', 'min:0'],
+                'sort_by' => ['nullable', 'in:price,created_at'],
+                'sort_dir' => ['nullable', 'in:asc,desc'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            ]);
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
+
+        $data = $request->all();
         $query = Apartment::with(['owner', 'city', 'governorate', 'photos', 'reviews.user', 'favorites']);
+
 
         if (!empty($data['city_id'] ?? null)) {
             $query->where('city_id', $data['city_id']);
@@ -139,9 +157,6 @@ class ApartmentController extends Controller
     public function addReview(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('غير مصرح لك.', 401);
-        }
 
         try {
             $request->validate([
@@ -153,7 +168,10 @@ class ApartmentController extends Controller
             return ResponseHelper::error($e->getMessage(), 422);
         }
 
-        if ($request->booking_id == null) {
+        $userBooking = Booking::where('renter_id', Auth::id())
+            ->firstOrFail();
+
+        if (!$userBooking) {
             return ResponseHelper::error('لا يمكنك تقييم الشقة بدون حجز.', 400);
         }
 

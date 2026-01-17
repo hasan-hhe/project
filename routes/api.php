@@ -19,9 +19,6 @@ Route::prefix("auth")->group(function () {
 // Public Location APIs (no authentication required)
 Route::get('/governorates', [LocationController::class, 'getGovernorates']);
 Route::get('/cities', [LocationController::class, 'getCities']);
-Route::get('/governorates/{id}/cities', [LocationController::class, 'getCitiesByGovernorate']);
-Route::get('/governorates/{id}', [LocationController::class, 'getGovernorate']);
-Route::get('/cities/{id}', [LocationController::class, 'getCity']);
 
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
@@ -50,7 +47,6 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/apartments', [ApartmentController::class, 'index'])->name('getApar');
     Route::get('/apartments/price-range', [ApartmentController::class, 'getPriceRange']);
     Route::get('/apartments/favorites', [ApartmentController::class, 'getFavoriteApartments'])->name('getFavoriteApar');
-    Route::get('/apartments/{id}', [ApartmentController::class, 'show'])->name('getAparById');
     Route::post('/apartments/{id}/toggle-favorite', [ApartmentController::class, 'toggleFavorite']);
     Route::get('/apartments/{id}/reviews', [ApartmentController::class, 'getReviews']);
     Route::post('/apartments/{id}/reviews', [ApartmentController::class, 'addReview']);

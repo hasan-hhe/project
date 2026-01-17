@@ -35,9 +35,6 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
-            return ResponseHelper::error('غير مصرح لك.', 401);
-        }
 
         try {
             $request->validate([
@@ -193,8 +190,8 @@ class BookingController extends Controller
             ->where('renter_id', $user->id)
             ->firstOrFail();
 
-        if (in_array($booking->status, ['CANCLED', 'COMPLETED'])) {
-            return ResponseHelper::error('لا يمكن إلغاء الحجز.', 400);
+        if ($booking->status !== 'PENDING') {
+            return ResponseHelper::error('لا يمكن إلغاء إلا الحجوزات المعلقة.', 400);
         }
 
         try {
@@ -234,8 +231,8 @@ class BookingController extends Controller
             ->where('renter_id', $user->id)
             ->firstOrFail();
 
-        if ($booking->status === 'CONFIRMED') {
-            return ResponseHelper::error('لا يمكن حذف الحجوزات المؤكدة. يرجى الإلغاء بدلاً من ذلك.', 400);
+        if ($booking->status !== 'PENDING') {
+            return ResponseHelper::error('لا يمكن حذف إلا الحجوزات المعلقة.', 400);
         }
 
         try {

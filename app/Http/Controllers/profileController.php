@@ -21,18 +21,7 @@ class ProfileController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
-        return ResponseHelper::success([
-            'id' => $user->id,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'phone_number' => $user->phone_number,
-            'account_type' => $user->account_type,
-            'status' => $user->status,
-            'date_of_birth' => $user->date_of_birth,
-            'avatar_url' => $user->avatar_url,
-            'identity_document_url' => $user->identity_document_url,
-            'email' => $user->email
-        ], 'تم جلب الملف الشخصي بنجاح.');
+        return ResponseHelper::success(new UserRecource($user), 'تم جلب الملف الشخصي بنجاح.');
     }
 
     #[OA\Post(path: "/update-profile-info", tags: ["Profile"], security: [["bearerAuth" => []]])]

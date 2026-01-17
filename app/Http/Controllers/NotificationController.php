@@ -18,8 +18,11 @@ class NotificationController extends Controller
         $perPage = $request->get('per_page', 10);
         $perPage = max(1, min(50, (int)$perPage));
 
-        $notifications = UserNotification::where('user_id', $user->id)
-            ->with('notification')
+        $ids = UserNotification::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->pluck('id');
+
+        $notifications = Notification::whereIn('id', $ids)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 

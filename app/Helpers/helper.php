@@ -165,7 +165,10 @@ function sendNotificationToUser($userId, $title, $body)
     ]);
 
     $user = User::find($userId);
-    $user->notifications()->attach($notification->id);
+    UserNotification::create([
+        'user_id' => $user->id,
+        'notification_id' => $notification->id,
+    ]);
 
     sendNotification($notification, $userId);
 }

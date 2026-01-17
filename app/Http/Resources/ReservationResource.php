@@ -29,7 +29,7 @@ class ReservationResource extends JsonResource
             'end_date' => $this->end_date?->format('Y-m-d'),
             'status' => $this->status,
             'total_price' => (float) $this->total_price,
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at,
             'renter' => $this->renter ? new UserRecource($this->renter) : null,
             'apartment' => $this->apartment ? new ApartmentResource($this->apartment) : null,
         ];
